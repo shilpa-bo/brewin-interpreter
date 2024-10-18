@@ -1,9 +1,12 @@
 from interpreterv1 import Interpreter
 test_program = """
 func main() {
+    var y;
     var x;
-    x = 5 + 6;
-    print("The sum is ", x);
+    var z;
+    x = "hi";
+    z=x;
+    y = x;
 }
 """
 

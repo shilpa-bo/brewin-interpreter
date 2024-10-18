@@ -1,89 +1,11 @@
 from intbase import InterpreterBase, ErrorType
 from brewparse import parse_program
 
-# I must use the base class some how
-# Each Node contains a elem_type object indicating the type of node
-class Node:
-    def __init__(self, elem_type):
-        self.elem_type = elem_type
-
-# A Program node represents the overall program
-class Program(Node):
-    def __init__(self, functions):
-        super().__init__('program')
-        self.dict = {'functions' : functions}
-        # self.dict which holds a single key 'functions' which maps to a list of Function Definition nodes
-class Function(Node):
-    def __init__(self, name, statements):
-        super().__init__('func')
-        self.dict = {'name' : name, 'statements' : statements}
-
-# A Statement node represents an individual statement
-# Variable, Definition, an Assignment, or a Function Call
-class Statement(Node):
-    def __init__(self, elem_type):
-        super().__init__(elem_type)
-
-class Variable(Statement):
-    def __init__(self, name):
-        super().__init__('vardef')
-        self.dict = {'name': name}
-    
-class Assignment(Statement):
-    def __init__(self, name, expression):
-        super().__init__('=')
-        self.dict = {'name' : name, 'expression': expression}
-
-class Function(Statement):
-    def __init__(self, name, args):
-        super().__init__('fcall')
-        self.dict = {'name' : name, 'args': args}
-
-# An Expression node represents an individual expression
-# Two types: binary operation, function call
-class Expression(Node):
-    def __init__(self, elem_type):
-        super().__init__(elem_type)
-
-class BinaryOp(Expression):
-    def __init__(self, elem_type, op1, op2):
-        super().__init__(elem_type)
-        self.dict = {'op1': op1, 'op2': op2}
-        # should I pass self.dict down?
-class SumOp(BinaryOp):
-    def __init__(self, op1, op2):
-        super().__init__('+', op1, op2) 
-class DiffOp(BinaryOp):
-    def __init__(self, op1, op2):
-        super().__init__('-', op1, op2)
-
-# can change to Function once I modulize
-class ExpFunction(Expression):
-    def __init__(self, name, args):
-        super().__init__('fcall')
-        self.dict = {'name' : name, 'args' : args}
-
-# A Variable node represents an individual variable that's refferred to in an expression
-class Variable(Node):
-    def __init__(self, name):
-        super().__init__('var')
-        self.dict = {'name' : name}
-
-# Value nodes: represent integers or string values
-class Value(Node):
-    def __init__(self, elem_type, val):
-        super().__init__(elem_type)
-        self.dict = {'val' : val}
-class Int(Node):
-    def __init__(self, val):
-        super().init('int', val)
-class Str(Node):
-    def __init__(self, val):
-        super().__init__('string', val)
-
 class Interpreter(InterpreterBase):
     def __init__(self, console_output=True, inp=None, trace_output=False):
         super().__init__(console_output, inp)   # call InterpreterBase's constructor
+        self.trace_output = trace_output
+        self.variables = {}
 
     def interpret_statement(self, statement):
         if self.trace_output == True:
@@ -110,6 +32,8 @@ class Interpreter(InterpreterBase):
         # need some dict to hold variables
         
     def run_func(self, func_node):
+        # why are we only running statements here?
+        # Execution starts on the very first statement inside of main() and proceeds from top to bottom
         for statement in func_node.get('statements'):
             self.run_statement(statement)
 
@@ -132,12 +56,55 @@ class Interpreter(InterpreterBase):
             print("Invalid Statement Type Error") # most likely
     
     def do_definition(self, statement):
-        print("Defintition", statement)
+        # definition
+        # add variable to the dictionary holding all variables
+        # un initialized, so value should be None
+        self.variables[statement.get('name')] = None
 
     def do_assignment(self, statement):
-        print("Assignment", statement)
 
+        if statement.get('name') in self.variables:
+            expression = statement.get('expression') # get expression node, variable, or value
+            source_node = self.get_expression_node(expression) # parse the expression node accordingly
+            self.variables[statement.get('name')] = source_node
+        else:
+            print("Error: variable is not defined")
+        
+        print("Assignment84", statement, self.variables)
+
+    def get_expression_node(self, expression):
+        print('87', expression.elem_type)
+
+        # Handling variable expression
+        if expression.elem_type ==  'var':
+            variable = expression.get('name')
+            if variable not in self.variables:
+                print("Error: variable is not defined")
+            variable_value = self.variables[variable]
+            # Recursively evaluate the variable's value if it's an expression (This line is from ChatGPT)
+            return self.get_expression_node(variable_value) if isinstance(variable_value, dict) else variable_value
+        
+        # Handling values
+        elif expression.elem_type == 'int' or expression.elem_type == 'string':
+            return expression.get('val')
+        
+        # Handling operations
+        elif expression.elem_type == '+':
+            operand1 = self.get_expression_node(expression.get('op1'))
+            operand2 = self.get_expression_node(expression.get('op2'))
+            return operand1 + operand2
+        
+        elif expression.elem_type == '-':
+            operand1 = self.get_expression_node(expression.get('op1'))
+            operand2 = self.get_expression_node(expression.get('op2'))
+            return operand1 - operand2
+        
+        else:
+            pass
+
+    def evaluate_expression_node(self):
+        pass
     def do_func_call(self, statement):
-        print("Function Call", statement)
+        print("Function Call108", statement)
 
     
