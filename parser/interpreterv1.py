@@ -68,7 +68,7 @@ class Interpreter(InterpreterBase):
             source_node = self.get_expression_node(expression) # parse the expression node accordingly
             self.variables[statement.get('name')] = source_node
         else:
-            print("Error: variable is not defined")
+            super().error(ErrorType.NAME_ERROR, f"Variable {statement.get('name')} is not defined")
         
         print("Assignment84", statement, self.variables)
 
@@ -79,7 +79,7 @@ class Interpreter(InterpreterBase):
         if expression.elem_type ==  'var':
             variable = expression.get('name')
             if variable not in self.variables:
-                print("Error: variable is not defined")
+                super().error(ErrorType.NAME_ERROR, f"Variable {variable} is not defined")
             variable_value = self.variables[variable]
             # Recursively evaluate the variable's value if it's an expression (This line is from ChatGPT)
             return self.get_expression_node(variable_value) if isinstance(variable_value, dict) else variable_value
@@ -89,22 +89,51 @@ class Interpreter(InterpreterBase):
             return expression.get('val')
         
         # Handling operations
-        elif expression.elem_type == '+':
+        elif expression.elem_type == '+' or expression.elem_type == '-':
             operand1 = self.get_expression_node(expression.get('op1'))
             operand2 = self.get_expression_node(expression.get('op2'))
-            return operand1 + operand2
-        
-        elif expression.elem_type == '-':
-            operand1 = self.get_expression_node(expression.get('op1'))
-            operand2 = self.get_expression_node(expression.get('op2'))
-            return operand1 - operand2
-        
+            if expression.elem_type == '+':
+                return operand1 + operand2
+            else:
+                return operand1 - operand2
+        elif expression.elem_type == 'fcall':
+            return self.do_func_call(expression)       
         else:
-            pass
+            print(expression.elem_type)
+            raise ValueError(f"Unsupported expression type: {expression.elem_type}") 
 
-    def evaluate_expression_node(self):
-        pass
+
     def do_func_call(self, statement):
         print("Function Call108", statement)
+        """
+        If name is print then do something? 
+        then call print_func
+        """
+        function_name = statement.get('name')
+        if function_name == 'print':
+            self.print_func(statement.get('args'))
+        elif function_name == 'inputi':
+            return self.input_func(statement.get('args'))
+        else:
+            super().error(ErrorType.NAME_ERROR, f"Function {function_name} has not been defined")
+        
+    def print_func(self, args):
+        # Do something
+        # do we care if elem_type is var or should we have already dealt with this?
+        # do we differentiate between strings, int, var?
+        print_statement = [self.get_expression_node(arg) for arg in args]
+        sentence = ' '.join(str(item) for item in print_statement)
+        print("121", sentence)
+        super().output(sentence)
 
-    
+    def input_func(self, args):
+        # only integers are inputted- need to convert to an int
+        # we return user input?
+        if len(args) == 0:
+            user_input = int(super().get_input())
+        elif len(args) == 1:
+            super().output(self.get_expression_node(args[0]))
+            user_input = int(super().get_input())
+        else:
+            super().error(ErrorType.NAME_ERROR, f"No inputi() function found that takes > 1 parameter")
+        return user_input
