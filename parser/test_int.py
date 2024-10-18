@@ -2,10 +2,9 @@ from interpreterv1 import Interpreter
 test_program = """
 func main() {
     var x;
-    x = "hi";
-    print("hi", x);
-    x = inputi("Enter Num");
-    print("h", x);
+    var y;
+    y = 8 + 9 - 9;
+    print(y, y, y);
 }
 """
 

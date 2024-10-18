@@ -9,36 +9,37 @@ class Interpreter(InterpreterBase):
 
     def interpret_statement(self, statement):
         if self.trace_output == True:
-            print(statement)
+            print(statement) # is this right?
 
     def get_main_func_node(self, ast):
         """
-        Gets main func node if exists else returns error
+        Gets main func node if exists else returns error that no main function was found
         """
         for func in ast.get('functions'):
             if func.get('name') == 'main':
                 return func
-        # function will only come here if we didn't find a main
+        
         super().error(
             ErrorType.NAME_ERROR,
             "No main() function was found"
         )
         
     def run(self, program):
+        """
+        Gets AST and finds the main function
+        """
         ast = parse_program(program)   
-        # Get the list of functions from the AST- main, make this shorter
         main_func_node = self.get_main_func_node(ast)
         self.run_func(main_func_node)
-        # need some dict to hold variables
         
     def run_func(self, func_node):
-        # why are we only running statements here?
-        # Execution starts on the very first statement inside of main() and proceeds from top to bottom
+        """
+        Execution starts on the very first statement inside of main() and proceeds from top to bottom
+        """
         for statement in func_node.get('statements'):
             self.run_statement(statement)
 
     def run_statement(self, statement):
-        # depending on the statement call: do something else
         """
         Statements can be:
             variable definition: vardef
@@ -53,16 +54,17 @@ class Interpreter(InterpreterBase):
         elif statement_type == 'fcall':
             self.do_func_call(statement)
         else:
-            print("Invalid Statement Type Error") # most likely
+            print("Invalid Statement Type Error") # SO WHAT HERE?
     
     def do_definition(self, statement):
         # definition
         # add variable to the dictionary holding all variables
         # un initialized, so value should be None
+        if statement.get('name') in self.variables:
+            super().error(ErrorType.NAME_ERROR, f"Variable {statement.get('name')} has already been defined :(")
         self.variables[statement.get('name')] = None
 
     def do_assignment(self, statement):
-
         if statement.get('name') in self.variables:
             expression = statement.get('expression') # get expression node, variable, or value
             source_node = self.get_expression_node(expression) # parse the expression node accordingly
@@ -92,10 +94,15 @@ class Interpreter(InterpreterBase):
         elif expression.elem_type == '+' or expression.elem_type == '-':
             operand1 = self.get_expression_node(expression.get('op1'))
             operand2 = self.get_expression_node(expression.get('op2'))
-            if expression.elem_type == '+':
-                return operand1 + operand2
+            if isinstance(operand1, int) and isinstance(operand2, int):
+                if expression.elem_type == '+':
+                    return operand1 + operand2
+                elif expression.elem_type == '-':
+                    return operand1 - operand2
+                else:
+                    super().error(ErrorType.NAME_ERROR, f"Operand {expression.elem_type} is not defined")
             else:
-                return operand1 - operand2
+                    super().error(ErrorType.TYPE_ERROR, f"Hello Ashvin")
         elif expression.elem_type == 'fcall':
             return self.do_func_call(expression)       
         else:
@@ -122,8 +129,8 @@ class Interpreter(InterpreterBase):
         # do we care if elem_type is var or should we have already dealt with this?
         # do we differentiate between strings, int, var?
         print_statement = [self.get_expression_node(arg) for arg in args]
-        sentence = ' '.join(str(item) for item in print_statement)
-        print("121", sentence)
+        sentence = ''.join(str(item) for item in print_statement) 
+        sentence += '\n'
         super().output(sentence)
 
     def input_func(self, args):
