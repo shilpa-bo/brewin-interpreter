@@ -3,8 +3,11 @@ test_program = """
 func main() {
     var x;
     var y;
-    y = 8 + 9 - 9;
-    print(y, y, y);
+    y = true;
+    x = nil;
+    print(y);
+    print(x);
+    x = !y;
 }
 """
 

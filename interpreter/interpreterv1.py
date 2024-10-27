@@ -1,7 +1,5 @@
 from intbase import InterpreterBase, ErrorType
 from brewparse import parse_program
-from env_v1 import EnvironmentManager
-from type_v1 import Type, Value, create_value, get_printable
 
 
 class Interpreter(InterpreterBase):
@@ -85,8 +83,19 @@ class Interpreter(InterpreterBase):
             return self.get_expression_node(variable_value) if isinstance(variable_value, dict) else variable_value
         
         # Handling values
-        elif elem_type == 'int' or expression.elem_type == 'string':
+        # How do I handle nil?
+        elif elem_type == 'int' or expression.elem_type == 'string' or expression.elem_type == 'bool' or expression.elem_type == 'nil':
             return expression.get('val')
+
+        # Handling unary operations
+        elif elem_type == 'neg' or elem_type == '!':
+            operand1 = self.get_expression_node(expression.get('op1'))
+            if isinstance(operand1, int):
+                return -1*operand1 if elem_type == 'neg' else super().error(ErrorType.NAME_ERROR, f"Operand {elem_type} is not defined")
+            elif isinstance(operand1, bool): # this is incorrect
+                return not operand1.value if elem_type == '!' else super().error(ErrorType.TYPE_ERROR, "Invalid operation on boolean")
+            else:
+                super().error(ErrorType.TYPE_ERROR, f"Invalid Types")
         
         # Handling operations
         elif elem_type == '+' or elem_type == '-' or elem_type == '*' or elem_type == '/':
@@ -103,6 +112,9 @@ class Interpreter(InterpreterBase):
                     return operand1 // operand2
                 else:
                     super().error(ErrorType.NAME_ERROR, f"Operand {elem_type} is not defined")
+            elif isinstance(operand1, str) and isinstance(operand2, str):
+                if elem_type == '+':
+                    return operand1 + operand2
             else:
                     super().error(ErrorType.TYPE_ERROR, f"Invalid Types")
         # Handling Functions
@@ -130,7 +142,7 @@ class Interpreter(InterpreterBase):
         """
         print_statement = [self.get_expression_node(arg) for arg in args]
         sentence = ''.join(str(item) for item in print_statement) 
-        sentence += '\n'
+        # sentence += '\n'
         super().output(sentence)
 
     def input_func(self, args):

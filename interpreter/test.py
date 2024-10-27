@@ -2,8 +2,16 @@ from brewparse import parse_program
 
 program = """
 func main() {
-    inputi();
-    inputi("hello");
+    var z;
+    var y;
+    z = 9;
+    if (z>=1) {return 1;}
+    else {return 0;}
+    var z;
+    x = -z;
+    y = !true;
+    
+
 }
 """
 ast = parse_program(program)
@@ -12,19 +20,26 @@ print(ast)
 for func in ast.get('functions'):
     if func.get('name') == 'main':
         main = func
+for statement in main.get('statements'):
+    print(statement)
+    expression = statement.get('expression')
+    print(expression)
+    if expression:
+        print(expression.get('op1'))
+        op1 = expression.get('op1')
 
-for statement in main.get('statements'):   
-    print(statement)     
-    if statement.elem_type == 'fcall':
-        function_name = statement.get('name')  # Get the function name
-        args = statement.get('args')  # Get the arguments (list)
-        print(function_name)
-        print(len(args))
-        for arg in args:
-            if arg.elem_type == 'string':
-                print("String Arg:", arg.get('val'))
-            if arg.elem_type == 'int':
-                print("Integer Arg:", arg.get('val'))
+# for statement in main.get('statements'):   
+#     print(statement)     
+#     if statement.elem_type == 'fcall':
+#         function_name = statement.get('name')  # Get the function name
+#         args = statement.get('args')  # Get the arguments (list)
+#         print(function_name)
+#         print(len(args))
+#         for arg in args:
+#             if arg.elem_type == 'string':
+#                 print("String Arg:", arg.get('val'))
+#             if arg.elem_type == 'int':
+#                 print("Integer Arg:", arg.get('val'))
 
     # expression = (statement.get('expression'))
     # print
