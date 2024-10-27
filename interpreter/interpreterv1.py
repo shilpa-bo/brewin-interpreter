@@ -1,5 +1,8 @@
 from intbase import InterpreterBase, ErrorType
 from brewparse import parse_program
+from env_v1 import EnvironmentManager
+from type_v1 import Type, Value, create_value, get_printable
+
 
 class Interpreter(InterpreterBase):
     def __init__(self, console_output=True, inp=None, trace_output=False):
@@ -7,51 +10,43 @@ class Interpreter(InterpreterBase):
         self.trace_output = trace_output
         self.variables = {}
 
-    def interpret_statement(self, statement):
-        if self.trace_output == True:
-            print(statement) # is this right?
-    
     def run(self, program):
         """
         Parses the program, finds the main function, and runs it.
         """
         ast = parse_program(program)   
-        main_func_node = self.get_main_func_node(ast)
-        self.run_func(main_func_node)
+        self.__set_up_function_table(ast)
+        self.__get_func_by_name
+        main_func = self.__get_func_by_name("main")
+        self.__run_statement(main_func.get("statements"))
 
-    def get_main_func_node(self, ast):
-        """
-        Gets the main function node if it exists, else raises an error.
-        """
-        for func in ast.get('functions'):
-            if func.get('name') == 'main':
-                return func
-        
-        super().error(
-            ErrorType.NAME_ERROR,
-            "No main() function was found"
-        )
+
+    def __set_up_function_table(self, ast):
+        self.func_name_to_ast = {}
+        for func_def in ast.get("functions"):
+            self.func_name_to_ast[func_def.get("name")] = func_def
+    
+    def __get_func_by_name(self, name):
+        if name not in self.func_name_to_ast:
+            super().error(ErrorType.NAME_ERROR, f"Function {name} not found")
+        return self.func_name_to_ast[name]
                 
-    def run_func(self, func_node):
-        """
-        Executes statements in the given function node sequentially.
-        """
-        for statement in func_node.get('statements'):
-            self.run_statement(statement)
-
-    def run_statement(self, statement):
+    def __run_statement(self, statements):
         """
         Interprets different types of statements: variable definition, assignment, or function call.
         """
-        statement_type = statement.elem_type
-        if statement_type == 'vardef':
-            self.do_definition(statement)
-        elif statement_type == '=':
-            self.do_assignment(statement)
-        elif statement_type == 'fcall':
-            self.do_func_call(statement)
-        else:
-            print("Invalid Statement Type Error") # SO WHAT HERE?
+        for statement in statements:
+            statement_type = statement.elem_type
+            if self.trace_output:
+                print(statement)
+            if statement_type == InterpreterBase.VAR_DEF_NODE:
+                self.do_definition(statement)
+            elif statement_type == '=':
+                self.do_assignment(statement)
+            elif statement_type == InterpreterBase.FCALL_NODE:
+                self.do_func_call(statement)
+            else:
+                print("Invalid Statement Type Error") # SO WHAT HERE?
     
     def do_definition(self, statement):
         """
@@ -94,7 +89,7 @@ class Interpreter(InterpreterBase):
             return expression.get('val')
         
         # Handling operations
-        elif elem_type == '+' or expression.elem_type == '-':
+        elif elem_type == '+' or elem_type == '-' or elem_type == '*' or elem_type == '/':
             operand1 = self.get_expression_node(expression.get('op1'))
             operand2 = self.get_expression_node(expression.get('op2'))
             if isinstance(operand1, int) and isinstance(operand2, int):
@@ -102,10 +97,14 @@ class Interpreter(InterpreterBase):
                     return operand1 + operand2
                 elif elem_type == '-':
                     return operand1 - operand2
+                elif elem_type == '*':
+                    return operand1 * operand2
+                elif elem_type == '/':
+                    return operand1 // operand2
                 else:
                     super().error(ErrorType.NAME_ERROR, f"Operand {elem_type} is not defined")
             else:
-                    super().error(ErrorType.TYPE_ERROR, f"Hello Ashvin")
+                    super().error(ErrorType.TYPE_ERROR, f"Invalid Types")
         # Handling Functions
         elif elem_type == 'fcall':
             return self.do_func_call(expression)       
