@@ -73,22 +73,13 @@ class Interpreter(InterpreterBase):
         Assigns a value to a variable if it exists.
         """
         var_name = statement.get('name')
-        # if var_name in self.variables:
-        #     expression = statement.get('expression')
-        #     source_node = self.get_expression_node(expression) 
-        #     self.variables[var_name] = source_node
-        # else:
-        #     super().error(ErrorType.NAME_ERROR, f"Variable {var_name} is not defined")
-        value_obj = self.get_expression_node(statement.get("expression"))
+        value_obj = self.__get_expression_node(statement.get("expression"))
         if not self.env.set(var_name, value_obj):
             super().error(
                 ErrorType.NAME_ERROR, f"Undefined variable {var_name} in assignment"
             )
-        # print(f"Debug: Assigned {value_obj} to variable '{var_name}'")
 
-        
-        # need to change self.vairables here i think
-    def get_expression_node(self, expression):
+    def __get_expression_node(self, expression):
         """
         Evaluates an expression node and returns its value.
         """
@@ -113,62 +104,10 @@ class Interpreter(InterpreterBase):
         if elem_type in Interpreter.BIN_OPS:
             return self.__do_func_call(expression)
 
-        # Handling variable expression
-        # if elem_type ==  'var':
-        #     variable = expression.get('name')
-        #     if variable not in self.env:
-        #         super().error(ErrorType.NAME_ERROR, f"Variable {variable} is not defined")
-        #     variable_value = self.env[variable]
-        #     # Recursively evaluate the variable's value if it's an expression (This line is from ChatGPT)
-        #     return variable_value
-        
-
-        
-        # Handling values
-        # How do I handle nil?
-        # elif elem_type == 'int' or expression.elem_type == 'string' or expression.elem_type == 'bool' or expression.elem_type == 'nil':
-        #     return expression.get('val')
-
-        # Handling unary operations
-        # elif elem_type == 'neg' or elem_type == '!':
-        #     operand1 = self.get_expression_node(expression.get('op1'))
-        #     if isinstance(operand1, int):
-        #         return -1*operand1 if elem_type == 'neg' else super().error(ErrorType.NAME_ERROR, f"Operand {elem_type} is not defined")
-        #     elif isinstance(operand1, bool): # this is incorrect
-        #         return not operand1.value if elem_type == '!' else super().error(ErrorType.TYPE_ERROR, "Invalid operation on boolean")
-        #     else:
-        #         super().error(ErrorType.TYPE_ERROR, f"Invalid Types")
-        
-        # Handling operations
-        # elif elem_type == '+' or elem_type == '-' or elem_type == '*' or elem_type == '/':
-        #     operand1 = self.get_expression_node(expression.get('op1'))
-        #     operand2 = self.get_expression_node(expression.get('op2'))
-        #     if isinstance(operand1, int) and isinstance(operand2, int):
-        #         if elem_type == '+':
-        #             return operand1 + operand2
-        #         elif elem_type == '-':
-        #             return operand1 - operand2
-        #         elif elem_type == '*':
-        #             return operand1 * operand2
-        #         elif elem_type == '/':
-        #             return operand1 // operand2
-        #         else:
-        #             super().error(ErrorType.NAME_ERROR, f"Operand {elem_type} is not defined")
-        #     elif isinstance(operand1, str) and isinstance(operand2, str):
-        #         if elem_type == '+':
-        #             return operand1 + operand2
-        #     else:
-        #             super().error(ErrorType.TYPE_ERROR, f"Invalid Types")
-        # # Handling Functions
-        # elif elem_type == 'fcall':
-        #     return self.do_func_call(expression)       
-        # else:
-        #     raise ValueError(f"Unsupported expression type: {elem_type}") 
-
     def __eval_bin_op(self, expression):
         elem_type = expression.elem_type
-        operand1 = self.get_expression_node(expression.get('op1'))
-        operand2 = self.get_expression_node(expression.get('op2'))
+        operand1 = self.__get_expression_node(expression.get('op1'))
+        operand2 = self.__get_expression_node(expression.get('op2'))
         if operand1.type() != operand2.type():
             super().error(
                 ErrorType.TYPE_ERROR,
@@ -182,47 +121,24 @@ class Interpreter(InterpreterBase):
         f = self.op_to_lambda[operand1.type()][elem_type]
         return f(operand1, operand2)
 
-        # if isinstance(operand1, int) and isinstance(operand2, int):
-        #     if elem_type == '+':
-        #         return operand1 + operand2
-        #     elif elem_type == '-':
-        #         return operand1 - operand2
-        #     elif elem_type == '*':
-        #         return operand1 * operand2
-        #     elif elem_type == '/':
-        #         return operand1 // operand2
-        #     else:
-        #         super().error(ErrorType.NAME_ERROR, f"Operand {elem_type} is not defined")
-        # elif isinstance(operand1, str) and isinstance(operand2, str):
-        #     if elem_type == '+':
-        #             return operand1 + operand2
-        # else:
-        #     super().error(ErrorType.TYPE_ERROR, f"Invalid Types")
-
     def __do_func_call(self, statement):
         """
         Handles function calls for built-in functions.
         """
         function_name = statement.get('name')
         if function_name == 'print':
-            self.print_func(statement)
+            self.__print_func(statement)
         elif function_name == 'inputi':
-            return self.input_func(statement)
+            return self.__input_func(statement)
         else:
             super().error(ErrorType.NAME_ERROR, f"Function {function_name} has not been defined")
         
-    def print_func(self, print_ast):
+    def __print_func(self, print_ast):
         args = print_ast.get('args')
-        print_statement = [self.get_expression_node(arg) for arg in args]
-        # You're trying to join Value objects directly
-        sentence = ''.join(str(item) for item in print_statement)  
-        # Should use get_printable() instead:
-        output = ""
-        for arg in args:
-            result = self.get_expression_node(arg)
-            output = output + get_printable(result)
+        print_statement = [get_printable(self.__get_expression_node(arg)) for arg in args]
+        output = ''.join(str(item) for item in print_statement)  
         super().output(output)
-    def input_func(self, call_ast):
+    def __input_func(self, call_ast):
         args = call_ast.get("args")
         if args is not None and len(args) == 1:
             result = self.__eval_expr(args[0])
