@@ -3,11 +3,10 @@ test_program = """
 func main() {
     var x;
     var y;
-    y = true;
-    x = nil;
-    print(y);
+    x = 9;
+    print("x");
     print(x);
-    x = !y;
+  
 }
 """
 

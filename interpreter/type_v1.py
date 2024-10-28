@@ -19,6 +19,9 @@ class Value:
     def type(self):
         return self.t
 
+    
+
+
 
 def create_value(val):
     if val == InterpreterBase.TRUE_DEF:
