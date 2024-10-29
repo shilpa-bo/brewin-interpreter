@@ -7,13 +7,13 @@ from type_v1 import Type, Value, create_value, get_printable
 class Interpreter(InterpreterBase):
 
     # constants
-    BIN_OPS = {"+", "-"}
+    BIN_OPS = {"+", "-", "*", '/', '==', '!=', '&&', '||', '<=', '<', '>', '>='}
+    UNARY_OPS = {'!', 'neg'}
 
     def __init__(self, console_output=True, inp=None, trace_output=False):
         super().__init__(console_output, inp)   # call InterpreterBase's constructor
         self.trace_output = trace_output
         self.__setup_ops()
-        # self.variables = {}
 
     def run(self, program):
         """
@@ -51,6 +51,10 @@ class Interpreter(InterpreterBase):
                 self.__do_assignment(statement)
             elif statement_type == InterpreterBase.FCALL_NODE:
                 self.__do_func_call(statement)
+            elif statement_type == InterpreterBase.IF_NODE:
+                self.__eval_if(statement)
+            elif statement_type == Interpreter.FOR_NODE:
+                self.__eval_4loop(statement)
             else:
                 print("Invalid Statement Type Error") # SO WHAT HERE?
     
@@ -59,9 +63,6 @@ class Interpreter(InterpreterBase):
         Add variable to dictionary once defined 
         """
         var_name = statement.get('name')
-        # if var_name in self.variables:
-        #     super().error(ErrorType.NAME_ERROR, f"Variable {var_name} has already been defined :(")
-        # self.variables[var_name] = None
         if not self.env.create(var_name, Value(Type.INT, 0)):
             super().error(
                 ErrorType.NAME_ERROR, f"Variable {var_name} has already been defined :("
@@ -92,17 +93,24 @@ class Interpreter(InterpreterBase):
             return Value(Type.STRING, expression.get("val"))
         if elem_type == InterpreterBase.BOOL_NODE:
             return Value(Type.BOOL, expression.get("val"))
-        # need to add something for nil
+        if elem_type == InterpreterBase.NIL_NODE:
+            return Value(Type.NIL)
         if elem_type == InterpreterBase.VAR_NODE:
             var_name = expression.get('name')
             val = self.env.get(var_name)
             if not val:
                 super().error(ErrorType.NAME_ERROR, f"Variable {var_name} is not defined")
             return val
-        if elem_type == InterpreterBase.FCALL_NODE:
-            return self.__eval_bin_op(expression)
         if elem_type in Interpreter.BIN_OPS:
-            return self.__do_func_call(expression)
+            return self.__eval_bin_op(expression)
+        if elem_type in Interpreter.UNARY_OPS:
+            return self.__eval_unary_op(expression)
+        if elem_type == InterpreterBase.FCALL_NODE:
+            return self.__do_func_call(expression)        
+        if elem_type == InterpreterBase.IF_NODE:
+            return self.__eval_if(expression)
+        if elem_type == InterpreterBase.FOR_NODE:
+            return self.__eval_4loop(expression)
 
     def __eval_bin_op(self, expression):
         elem_type = expression.elem_type
@@ -120,6 +128,51 @@ class Interpreter(InterpreterBase):
             )
         f = self.op_to_lambda[operand1.type()][elem_type]
         return f(operand1, operand2)
+    
+    def __eval_unary_op(self, expression):
+        elem_type = expression.elem_type
+        operand = self.__get_expression_node(expression.get('op1'))
+        if elem_type not in self.op_to_lambda[operand.type()]:
+            super().error(
+                ErrorType.TYPE_ERROR,
+                f"Incompatible operator {elem_type} for type {operand.type()}",
+            )
+        f = self.op_to_lambda[operand.type()][elem_type]
+        return f(operand)
+
+    def __eval_if(self, expression):
+        elem_type = expression.elem_type # if
+        condition = self.__get_expression_node(expression.get('condition')) # maybe function?
+        if condition.type() != Type.BOOL: 
+            super().error(
+                ErrorType.TYPE_ERROR,
+                f"{elem_type} statement condition must be a boolean"
+            )
+        if condition.value():
+            self.__run_statement(expression.get('statements'))
+        else:
+            if expression.get('else_statements'):
+                self.__run_statement(expression.get('else_statements'))
+    
+    def __eval_4loop(self, expression):
+        elem_type = expression.elem_type
+
+        # initialize
+        self.__do_assignment(expression.get('init'))
+
+        condition = self.__get_expression_node(expression.get('condition'))
+        if condition.type() != Type.BOOL: 
+            super().error(
+                ErrorType.TYPE_ERROR,
+                f"{elem_type} statement condition must be a boolean"
+        )
+        while condition.value():
+            self.__run_statement(expression.get('statements'))
+            
+            self.__do_assignment(expression.get('update'))
+            
+            condition = self.__get_expression_node(expression.get('condition'))
+        
 
     def __do_func_call(self, statement):
         """
@@ -138,6 +191,7 @@ class Interpreter(InterpreterBase):
         print_statement = [get_printable(self.__get_expression_node(arg)) for arg in args]
         output = ''.join(str(item) for item in print_statement)  
         super().output(output)
+
     def __input_func(self, call_ast):
         args = call_ast.get("args")
         if args is not None and len(args) == 1:
@@ -150,19 +204,34 @@ class Interpreter(InterpreterBase):
         inp = super().get_input()
         if call_ast.get("name") == "inputi":
             return Value(Type.INT, int(inp))
-        # we can support inputs here later
 
     def __setup_ops(self):
         self.op_to_lambda = {}
-        # set up operations on integers
+        
+        # Set up operations for integers
         self.op_to_lambda[Type.INT] = {}
-        self.op_to_lambda[Type.INT]["+"] = lambda x, y: Value(
-            x.type(), x.value() + y.value()
-        )
-        self.op_to_lambda[Type.INT]["-"] = lambda x, y: Value(
-            x.type(), x.value() - y.value()
-        )
+        self.op_to_lambda[Type.INT]["+"] = lambda x, y: Value(x.type(), x.value() + y.value())
+        self.op_to_lambda[Type.INT]["-"] = lambda x, y: Value(x.type(), x.value() - y.value())
+        self.op_to_lambda[Type.INT]["*"] = lambda x, y: Value(x.type(), x.value() * y.value())
+        self.op_to_lambda[Type.INT]["/"] = lambda x, y: Value(x.type(), x.value() // y.value())
+        self.op_to_lambda[Type.INT]["=="] = lambda x, y: Value(Type.BOOL, x.value() == y.value())
+        self.op_to_lambda[Type.INT]["!="] = lambda x, y: Value(Type.BOOL, x.value() != y.value())
+        self.op_to_lambda[Type.INT][">"] = lambda x, y: Value(Type.BOOL, x.value() > y.value())
+        self.op_to_lambda[Type.INT][">="] = lambda x, y: Value(Type.BOOL, x.value() >= y.value())
+        self.op_to_lambda[Type.INT]["<"] = lambda x, y: Value(Type.BOOL, x.value() < y.value())
+        self.op_to_lambda[Type.INT]["<="] = lambda x, y: Value(Type.BOOL, x.value() <= y.value())
+        self.op_to_lambda[Type.INT]["neg"] = lambda x: Value(x.type(), -x.value())
+
+        # Set up operations for strings
         self.op_to_lambda[Type.STRING] = {}
-        self.op_to_lambda[Type.STRING]["+"] = lambda x, y: Value(
-            x.type(), x.value() + y.value()
-        )
+        self.op_to_lambda[Type.STRING]["+"] = lambda x, y: Value(x.type(), x.value() + y.value())
+        self.op_to_lambda[Type.STRING]["=="] = lambda x, y: Value(Type.BOOL, x.value() == y.value())
+        self.op_to_lambda[Type.STRING]["!="] = lambda x, y: Value(Type.BOOL, x.value() != y.value())
+
+        # Set up operations for booleans
+        self.op_to_lambda[Type.BOOL] = {}
+        self.op_to_lambda[Type.BOOL]["!"] = lambda x: Value(x.type(), not x.value())
+        self.op_to_lambda[Type.BOOL]["=="] = lambda x, y: Value(Type.BOOL, x.value() == y.value())
+        self.op_to_lambda[Type.BOOL]["!="] = lambda x, y: Value(Type.BOOL, x.value() != y.value())
+        self.op_to_lambda[Type.BOOL]["&&"] = lambda x, y: Value(x.type(), x.value() and y.value())
+        self.op_to_lambda[Type.BOOL]["||"] = lambda x, y: Value(x.type(), x.value() or y.value())
