@@ -2,7 +2,7 @@ from intbase import InterpreterBase, ErrorType
 from brewparse import parse_program
 from env_v1 import EnvironmentManager
 from type_v1 import Type, Value, create_value, get_printable
-
+import copy
 
 class Interpreter(InterpreterBase):
 
@@ -141,7 +141,10 @@ class Interpreter(InterpreterBase):
         return f(operand)
 
     def __eval_if(self, expression):
-        elem_type = expression.elem_type # if
+        # Create new environment
+        self.env.push_scope()
+
+        elem_type = expression.elem_type 
         condition = self.__get_expression_node(expression.get('condition')) # maybe function?
         if condition.type() != Type.BOOL: 
             super().error(
@@ -153,26 +156,34 @@ class Interpreter(InterpreterBase):
         else:
             if expression.get('else_statements'):
                 self.__run_statement(expression.get('else_statements'))
+        
+        # reset environment
+        self.env.pop_scope()
+
     
     def __eval_4loop(self, expression):
-        elem_type = expression.elem_type
+        elem_type = expression.elem_type # if
 
         # initialize
         self.__do_assignment(expression.get('init'))
 
+        # check condition initially
         condition = self.__get_expression_node(expression.get('condition'))
+
         if condition.type() != Type.BOOL: 
             super().error(
                 ErrorType.TYPE_ERROR,
                 f"{elem_type} statement condition must be a boolean"
         )
+        self.env.push_scope()
         while condition.value():
             self.__run_statement(expression.get('statements'))
             
             self.__do_assignment(expression.get('update'))
             
             condition = self.__get_expression_node(expression.get('condition'))
-        
+        self.env.pop_scope()
+
 
     def __do_func_call(self, statement):
         """
