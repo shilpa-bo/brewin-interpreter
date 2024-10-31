@@ -2,18 +2,20 @@ from intbase import InterpreterBase, ErrorType
 from brewparse import parse_program
 from env_v1 import EnvironmentManager
 from type_v1 import Type, Value, create_value, get_printable
-import copy
 
 class Interpreter(InterpreterBase):
 
     # constants
     BIN_OPS = {"+", "-", "*", '/', '==', '!=', '&&', '||', '<=', '<', '>', '>='}
     UNARY_OPS = {'!', 'neg'}
+    FUNCTION_FLAG = False
 
     def __init__(self, console_output=True, inp=None, trace_output=False):
         super().__init__(console_output, inp)   # call InterpreterBase's constructor
         self.trace_output = trace_output
         self.__setup_ops()
+        self.return_value = None
+        self.program_running = False
 
     def run(self, program):
         """
@@ -23,6 +25,7 @@ class Interpreter(InterpreterBase):
         self.__set_up_function_table(ast)
         self.__get_func_by_name
         main_func = self.__get_func_by_name("main")
+        self.program_running = True
         self.env = EnvironmentManager() # using environment manager to handle variables
         self.__run_statement(main_func.get("statements"))
 
@@ -30,21 +33,33 @@ class Interpreter(InterpreterBase):
     def __set_up_function_table(self, ast):
         self.func_name_to_ast = {}
         for func_def in ast.get("functions"):
-            self.func_name_to_ast[func_def.get("name")] = func_def
+            func_signature = self.__generate_function_signature(func_def)
+            self.func_name_to_ast[func_signature] = func_def
+        print(f"Func AST Table: {self.func_name_to_ast}")
     
+    def __generate_function_signature(self, function_ast):
+        func_signature = function_ast.get("name")
+        for _ in range (len(function_ast.get("args"))):
+            func_signature += "_*" 
+        return func_signature
+        
+
     def __get_func_by_name(self, name):
         if name not in self.func_name_to_ast:
             super().error(ErrorType.NAME_ERROR, f"Function {name} not found")
         return self.func_name_to_ast[name]
                 
-    def __run_statement(self, statements):
-        """
-        Interprets different types of statements: variable definition, assignment, or function call.
-        """
+    def __run_statement(self, statements, function_flag=False):
+        if function_flag: Interpreter.FUNCTION_FLAG = True
         for statement in statements:
+
+            if self.return_value is not None:
+                return  # Stop executing further statements
+
             statement_type = statement.elem_type
             if self.trace_output:
                 print(statement)
+
             if statement_type == InterpreterBase.VAR_DEF_NODE:
                 self.__do_definition(statement)
             elif statement_type == '=':
@@ -55,8 +70,12 @@ class Interpreter(InterpreterBase):
                 self.__eval_if(statement)
             elif statement_type == Interpreter.FOR_NODE:
                 self.__eval_4loop(statement)
+            elif statement_type == Interpreter.RETURN_NODE:
+                self.__eval_return(statement)
+                return 
             else:
-                print("Invalid Statement Type Error") # SO WHAT HERE?
+                print("Invalid Statement Type Error")  # Error handling
+        Interpreter.FUNCTION_FLAG = False
     
     def __do_definition(self, statement):
         """
@@ -67,7 +86,6 @@ class Interpreter(InterpreterBase):
             super().error(
                 ErrorType.NAME_ERROR, f"Variable {var_name} has already been defined :("
             )
-        # print(f"Debug: Defined variable '{var_name}' with initial value 0")
 
     def __do_assignment(self, statement):
         """
@@ -75,7 +93,8 @@ class Interpreter(InterpreterBase):
         """
         var_name = statement.get('name')
         value_obj = self.__get_expression_node(statement.get("expression"))
-        if not self.env.set(var_name, value_obj):
+        # print(f"Debug: Assigned variable '{var_name}' with initial value {value_obj.value()}")
+        if not self.env.set(var_name, value_obj, Interpreter.FUNCTION_FLAG):
             super().error(
                 ErrorType.NAME_ERROR, f"Undefined variable {var_name} in assignment"
             )
@@ -97,7 +116,7 @@ class Interpreter(InterpreterBase):
             return Value(Type.NIL)
         if elem_type == InterpreterBase.VAR_NODE:
             var_name = expression.get('name')
-            val = self.env.get(var_name)
+            val = self.env.get(var_name, Interpreter.FUNCTION_FLAG)
             if not val:
                 super().error(ErrorType.NAME_ERROR, f"Variable {var_name} is not defined")
             return val
@@ -106,12 +125,17 @@ class Interpreter(InterpreterBase):
         if elem_type in Interpreter.UNARY_OPS:
             return self.__eval_unary_op(expression)
         if elem_type == InterpreterBase.FCALL_NODE:
+            # print(f"Debug: Evaluated FUNC_CALL")
             return self.__do_func_call(expression)        
         if elem_type == InterpreterBase.IF_NODE:
             return self.__eval_if(expression)
         if elem_type == InterpreterBase.FOR_NODE:
             return self.__eval_4loop(expression)
-
+        if elem_type == InterpreterBase.RETURN_NODE:
+            print("Line 135")
+            return self.__eval_return(expression)
+            
+        
     def __eval_bin_op(self, expression):
         elem_type = expression.elem_type
         operand1 = self.__get_expression_node(expression.get('op1'))
@@ -143,6 +167,7 @@ class Interpreter(InterpreterBase):
     def __eval_if(self, expression):
         # Create new environment
         self.env.push_scope()
+        Interpreter.FUNCTION_FLAG = False
 
         elem_type = expression.elem_type 
         condition = self.__get_expression_node(expression.get('condition')) # maybe function?
@@ -163,8 +188,8 @@ class Interpreter(InterpreterBase):
     
     def __eval_4loop(self, expression):
         elem_type = expression.elem_type # if
-
         # initialize
+        Interpreter.FUNCTION_FLAG = False
         self.__do_assignment(expression.get('init'))
 
         # check condition initially
@@ -184,19 +209,49 @@ class Interpreter(InterpreterBase):
             condition = self.__get_expression_node(expression.get('condition'))
         self.env.pop_scope()
 
-
-    def __do_func_call(self, statement):
-        """
-        Handles function calls for built-in functions.
-        """
-        function_name = statement.get('name')
-        if function_name == 'print':
-            self.__print_func(statement)
-        elif function_name == 'inputi':
-            return self.__input_func(statement)
-        else:
-            super().error(ErrorType.NAME_ERROR, f"Function {function_name} has not been defined")
+    def __eval_return(self, statement):
+        expression = statement.get("expression")
+        if not expression:
+            self.return_value = None
+            return
+        self.return_value = self.__get_expression_node(expression)
         
+    def __do_func_call(self, statement):
+        if statement.get('name') == 'print':
+            self.__print_func(statement)
+            return
+        elif statement.get('name') == 'inputi':
+            return self.__input_func(statement)
+
+        # Prepare for function call
+        func_sig = self.__generate_function_signature(statement)
+        if func_sig not in self.func_name_to_ast:
+            super().error(ErrorType.NAME_ERROR, f"Function {func_sig} has not been defined")
+
+        func_ast = self.func_name_to_ast[func_sig]
+        args = statement.get("args")
+        params = func_ast.get("args")
+
+        # Set up a new function scope
+        self.env.push_scope()
+        self.return_value = None 
+
+        # Assign arguments to parameters
+        for param, arg_expr in zip(params, args):
+            arg_value = self.__get_expression_node(arg_expr)
+            param_name = param.get("name")
+            self.env.create(param_name, arg_value)
+
+        # Execute the function body
+        self.__run_statement(func_ast.get("statements"))
+
+        # Capture and return the return_value if set
+        result = self.return_value if self.return_value is not None else Value(Type.NIL)
+        self.return_value = None
+        self.env.pop_scope()
+        
+        return result  # Pass result back to caller
+    
     def __print_func(self, print_ast):
         args = print_ast.get('args')
         print_statement = [get_printable(self.__get_expression_node(arg)) for arg in args]
@@ -244,5 +299,7 @@ class Interpreter(InterpreterBase):
         self.op_to_lambda[Type.BOOL]["!"] = lambda x: Value(x.type(), not x.value())
         self.op_to_lambda[Type.BOOL]["=="] = lambda x, y: Value(Type.BOOL, x.value() == y.value())
         self.op_to_lambda[Type.BOOL]["!="] = lambda x, y: Value(Type.BOOL, x.value() != y.value())
-        self.op_to_lambda[Type.BOOL]["&&"] = lambda x, y: Value(x.type(), x.value() and y.value())
-        self.op_to_lambda[Type.BOOL]["||"] = lambda x, y: Value(x.type(), x.value() or y.value())
+
+        # ADD STRICT EVALUATION
+        self.op_to_lambda[Type.BOOL]["&&"] = lambda x, y: Value(x.type(), (x.value() and y.value()) and (y.value() and x.value()))
+        self.op_to_lambda[Type.BOOL]["||"] = lambda x, y: Value(x.type(), (x.value() or y.value()) or (y.value() or x.value()))
