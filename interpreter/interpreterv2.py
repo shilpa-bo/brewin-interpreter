@@ -35,14 +35,13 @@ class Interpreter(InterpreterBase):
         for func_def in ast.get("functions"):
             func_signature = self.__generate_function_signature(func_def)
             self.func_name_to_ast[func_signature] = func_def
-        print(f"Func AST Table: {self.func_name_to_ast}")
+
     
     def __generate_function_signature(self, function_ast):
         func_signature = function_ast.get("name")
         for _ in range (len(function_ast.get("args"))):
             func_signature += "_*" 
         return func_signature
-        
 
     def __get_func_by_name(self, name):
         if name not in self.func_name_to_ast:
@@ -52,14 +51,12 @@ class Interpreter(InterpreterBase):
     def __run_statement(self, statements, function_flag=False):
         if function_flag: Interpreter.FUNCTION_FLAG = True
         for statement in statements:
-
-            if self.return_value is not None:
+            if self.return_value is not Value(Type.NIL).value():
                 return  # Stop executing further statements
 
             statement_type = statement.elem_type
             if self.trace_output:
                 print(statement)
-
             if statement_type == InterpreterBase.VAR_DEF_NODE:
                 self.__do_definition(statement)
             elif statement_type == '=':
@@ -69,7 +66,7 @@ class Interpreter(InterpreterBase):
             elif statement_type == InterpreterBase.IF_NODE:
                 self.__eval_if(statement)
             elif statement_type == Interpreter.FOR_NODE:
-                self.__eval_4loop(statement)
+                self.__eval_for_loop(statement)
             elif statement_type == Interpreter.RETURN_NODE:
                 self.__eval_return(statement)
                 return 
@@ -93,7 +90,6 @@ class Interpreter(InterpreterBase):
         """
         var_name = statement.get('name')
         value_obj = self.__get_expression_node(statement.get("expression"))
-        # print(f"Debug: Assigned variable '{var_name}' with initial value {value_obj.value()}")
         if not self.env.set(var_name, value_obj, Interpreter.FUNCTION_FLAG):
             super().error(
                 ErrorType.NAME_ERROR, f"Undefined variable {var_name} in assignment"
@@ -105,15 +101,13 @@ class Interpreter(InterpreterBase):
         """
         elem_type = expression.elem_type
         if elem_type == InterpreterBase.INT_NODE:
-            # print(f"Debug: Evaluated INT_NODE, result={Value(Type.INT, expression.get("val"))}")
             return Value(Type.INT, expression.get("val"))
         if elem_type == InterpreterBase.STRING_NODE:
-            # print(f"Debug: Evaluated STRING_NODE, result={Value(Type.STRING, expression.get("val"))}")
             return Value(Type.STRING, expression.get("val"))
         if elem_type == InterpreterBase.BOOL_NODE:
             return Value(Type.BOOL, expression.get("val"))
         if elem_type == InterpreterBase.NIL_NODE:
-            return Value(Type.NIL)
+            return Value(Type.NIL, expression.get("val"))
         if elem_type == InterpreterBase.VAR_NODE:
             var_name = expression.get('name')
             val = self.env.get(var_name, Interpreter.FUNCTION_FLAG)
@@ -125,14 +119,12 @@ class Interpreter(InterpreterBase):
         if elem_type in Interpreter.UNARY_OPS:
             return self.__eval_unary_op(expression)
         if elem_type == InterpreterBase.FCALL_NODE:
-            # print(f"Debug: Evaluated FUNC_CALL")
             return self.__do_func_call(expression)        
         if elem_type == InterpreterBase.IF_NODE:
             return self.__eval_if(expression)
         if elem_type == InterpreterBase.FOR_NODE:
-            return self.__eval_4loop(expression)
+            return self.__eval_for_loop(expression)
         if elem_type == InterpreterBase.RETURN_NODE:
-            print("Line 135")
             return self.__eval_return(expression)
             
         
@@ -140,11 +132,12 @@ class Interpreter(InterpreterBase):
         elem_type = expression.elem_type
         operand1 = self.__get_expression_node(expression.get('op1'))
         operand2 = self.__get_expression_node(expression.get('op2'))
-        if operand1.type() != operand2.type():
-            super().error(
-                ErrorType.TYPE_ERROR,
-                f"Incompatible types for {elem_type} operation",
-            )
+        if elem_type != '==' and elem_type != '!=':
+            if operand1.type() != operand2.type():
+                super().error(
+                    ErrorType.TYPE_ERROR,
+                    f"Incompatible types for {elem_type} operation",
+                )
         if elem_type not in self.op_to_lambda[operand1.type()]:
             super().error(
                 ErrorType.TYPE_ERROR,
@@ -186,28 +179,30 @@ class Interpreter(InterpreterBase):
         self.env.pop_scope()
 
     
-    def __eval_4loop(self, expression):
-        elem_type = expression.elem_type # if
-        # initialize
+    def __eval_for_loop(self, expression):
+        elem_type = expression.elem_type
         Interpreter.FUNCTION_FLAG = False
+
         self.__do_assignment(expression.get('init'))
 
-        # check condition initially
         condition = self.__get_expression_node(expression.get('condition'))
-
         if condition.type() != Type.BOOL: 
             super().error(
                 ErrorType.TYPE_ERROR,
                 f"{elem_type} statement condition must be a boolean"
-        )
-        self.env.push_scope()
+            )
+
         while condition.value():
+            self.env.push_scope()
+            
+            # Run the loop statements
             self.__run_statement(expression.get('statements'))
             
+            # Pop the scope for this iteration, removing inner loop variables
+            self.env.pop_scope()
+
             self.__do_assignment(expression.get('update'))
-            
             condition = self.__get_expression_node(expression.get('condition'))
-        self.env.pop_scope()
 
     def __eval_return(self, statement):
         expression = statement.get("expression")
@@ -219,8 +214,8 @@ class Interpreter(InterpreterBase):
     def __do_func_call(self, statement):
         if statement.get('name') == 'print':
             self.__print_func(statement)
-            return
-        elif statement.get('name') == 'inputi':
+            return Value(Type.NIL)
+        elif statement.get('name') == 'inputi' or statement.get('name') == 'inputs':
             return self.__input_func(statement)
 
         # Prepare for function call
@@ -234,7 +229,7 @@ class Interpreter(InterpreterBase):
 
         # Set up a new function scope
         self.env.push_scope()
-        self.return_value = None 
+        self.return_value = None
 
         # Assign arguments to parameters
         for param, arg_expr in zip(params, args):
@@ -261,7 +256,7 @@ class Interpreter(InterpreterBase):
     def __input_func(self, call_ast):
         args = call_ast.get("args")
         if args is not None and len(args) == 1:
-            result = self.__eval_expr(args[0])
+            result = self.__get_expression_node(args[0])
             super().output(get_printable(result))
         elif args is not None and len(args) > 1:
             super().error(
@@ -270,7 +265,9 @@ class Interpreter(InterpreterBase):
         inp = super().get_input()
         if call_ast.get("name") == "inputi":
             return Value(Type.INT, int(inp))
-
+        if call_ast.get("name") == "inputs":
+            return Value(Type.STRING, inp)
+        
     def __setup_ops(self):
         self.op_to_lambda = {}
         
@@ -303,3 +300,8 @@ class Interpreter(InterpreterBase):
         # ADD STRICT EVALUATION
         self.op_to_lambda[Type.BOOL]["&&"] = lambda x, y: Value(x.type(), (x.value() and y.value()) and (y.value() and x.value()))
         self.op_to_lambda[Type.BOOL]["||"] = lambda x, y: Value(x.type(), (x.value() or y.value()) or (y.value() or x.value()))
+
+        # Set up operations for nil
+        self.op_to_lambda[Type.NIL] = {}
+        self.op_to_lambda[Type.NIL]["=="] = lambda x, y: Value(Type.BOOL, y.type() == Type.NIL)
+        self.op_to_lambda[Type.NIL]["!="] = lambda x, y: Value(Type.BOOL, y.type() != Type.NIL)
