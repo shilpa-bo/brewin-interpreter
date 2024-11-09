@@ -1,0 +1,23 @@
+func foo(y){
+    return y;
+    x = 8;
+}
+func main(){
+  var x;
+  x = 9;
+  if (x < 10){
+    if (x == 10){
+        return 9;
+    }
+    return 8;
+  }
+  print(foo(x));
+  print(foo(x));
+}
+
+/*
+*OUT*
+hi
+false
+*OUT*
+*/

@@ -35,8 +35,11 @@ def run_1(test_file, test_name):
 
 # Main block
 if __name__ == "__main__":
-    print("Running Fails")
-    run_tests("fails")
+    # print("Running Fails")
+    # run_tests("fails")
 
-    print("Running Tests")
-    run_tests("tests")
+    # print("Running Tests")
+    # run_tests("tests")
+    run_1("tests", "rename.br")    
+    # run_1("tests", "test_scope1.br")
+    # run_1("tests", "test_scope2.br")

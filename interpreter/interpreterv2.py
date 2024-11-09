@@ -51,7 +51,7 @@ class Interpreter(InterpreterBase):
     def __run_statement(self, statements, function_flag=False):
         if function_flag: Interpreter.FUNCTION_FLAG = True
         for statement in statements:
-            if self.return_value is not Value(Type.NIL).value():
+            if self.return_value is not None:
                 return  # Stop executing further statements
 
             statement_type = statement.elem_type
@@ -207,7 +207,7 @@ class Interpreter(InterpreterBase):
     def __eval_return(self, statement):
         expression = statement.get("expression")
         if not expression:
-            self.return_value = None
+            self.return_value = Type.NIL
             return
         self.return_value = self.__get_expression_node(expression)
         
@@ -229,6 +229,7 @@ class Interpreter(InterpreterBase):
 
         # Set up a new function scope
         self.env.push_scope()
+        # i need a return value per scope
         self.return_value = None
 
         # Assign arguments to parameters

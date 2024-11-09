@@ -1,0 +1,116 @@
+func main() {
+    print("Testing int binary operators");
+    var a;
+    var b;
+    var c;
+    var d;
+    a = 4;
+    b = 10;
+    c = a + b;
+    d = c - a;
+    print(c);
+    print(d);
+    c = a * c;
+    d = b / a;
+    print(c);
+    print(d);
+    print("Testing negation");
+    d = -d;
+    print(d);
+    var e;
+    print("Testing int comparison operators");
+    e = 3 < b;
+    c = a > b;
+    print(e);
+    print(c);
+    var f;
+    f = 4;
+    d = f == a;
+    c = 10 == b;    
+    print(c);
+    print(f);
+    print(d);
+    c = b <= a;
+    print(c);
+    e = 6 >= 5;
+    print(e);
+    e = 5 >= 5;
+    print(e);
+    var my_bool;
+    print("Testing boolean logical binary operators");
+    my_bool = e || c;
+    print(my_bool);
+    my_bool = e && c;
+    print(my_bool);
+    print("Testing boolean logical unary operators");
+    my_bool = !my_bool;
+    print(my_bool);
+    print("Testing boolean comparison operators");
+    my_bool = true == false;
+    print(my_bool);
+    print(false == false);
+    print(my_bool);
+    print(true != false);
+    print("Testing defining bool constants");
+    var another_bool;
+    another_bool = true;
+    print(another_bool);
+    print("Testing string binary and comparison operators");
+    var str1;
+    var str2;
+    var str_concat;
+    str1 = "hello";
+    str2 = "world";
+    str_concat = str1 + str2;
+    print(str_concat);
+    str_concat = "what" + " " + "is " + "up?";
+    print(str_concat);
+    var str_test;
+    str_test = "hello" == str1;
+    print(str_test);
+    str_test = "hello" == str2;
+    print(str_test);
+    str_test = "world" != str2;
+    print(str_test);
+    print("world" != "what");
+}
+
+/*
+*OUT*
+Testing int binary operators
+14
+10
+56
+2
+Testing negation
+-2
+Testing int comparison operators
+true
+false
+true
+4
+true
+false
+true
+true
+Testing boolean logical binary operators
+true
+false
+Testing boolean logical unary operators
+true
+Testing boolean comparison operators
+false
+true
+false
+true
+Testing defining bool constants
+true
+Testing string binary and comparison operators
+helloworld
+what is up?
+true
+false
+false
+true
+*OUT*
+*/

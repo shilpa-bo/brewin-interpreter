@@ -1,0 +1,25 @@
+func main() {
+  var c;
+  c = 0;
+  if (1 < 2) { print("a"); }
+  if (c > 2) { 
+    c = 3;
+    print("gtr than");
+    print(c); 
+  } else {
+    var c;  /* shadows */
+    c = 3;
+    print("less than"); 
+    print(c); 
+  }
+  print(c);
+}
+
+/*
+*OUT*
+a
+less than
+3
+0
+*OUT*
+*/
