@@ -8,6 +8,7 @@ class Type:
     STRING = "string"
     NIL = "nil"
 
+
 # Represents a value, which has a type and its value
 class Value:
     def __init__(self, type, value=None):
@@ -20,15 +21,14 @@ class Value:
     def type(self):
         return self.t
 
-    
-
-
 
 def create_value(val):
     if val == InterpreterBase.TRUE_DEF:
         return Value(Type.BOOL, True)
     elif val == InterpreterBase.FALSE_DEF:
         return Value(Type.BOOL, False)
+    elif val == InterpreterBase.NIL_DEF:
+        return Value(Type.NIL, None)
     elif isinstance(val, str):
         return Value(Type.STRING, val)
     elif isinstance(val, int):

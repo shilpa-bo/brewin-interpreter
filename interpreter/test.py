@@ -1,18 +1,5 @@
 from brewparse import parse_program
 
-def pretty_print_ast(node, indent=0):
-    """ Recursively prints the AST with indentation. """
-    indent_str = ' ' * indent
-    if isinstance(node, dict):
-        for key, value in node.items():
-            print(f"{indent_str}{key}:")
-            pretty_print_ast(value, indent + 4)
-    elif isinstance(node, list):
-        for item in node:
-            pretty_print_ast(item, indent)
-    else:
-        print(f"{indent_str}{node}")
-
 
 # Call the function on the AST
 
@@ -34,14 +21,14 @@ return (10);
 }
 """
 ast = parse_program(program)
-pretty_print_ast(ast)
+print(ast)
 print("***PARSING***")
 # Assuming 'ast' contains the parsed AST structure
 for func in ast.get('functions'):
     if func.get('name') == 'main':
         main = func
         print("Function 'main' arguments:")
-        pretty_print_ast(main.get('args'))
+        print(main.get('args'))
         
         print("\nFunction 'main' statements:")
         for statement in main.get('statements'):
