@@ -1,0 +1,13 @@
+func main() : void {
+  print(foo());
+}
+
+func foo() : void {
+  print("hi");
+  return;
+}
+
+/*
+*OUT*
+ErrorType.TYPE_ERROR: Void not allowed as argument
+*/

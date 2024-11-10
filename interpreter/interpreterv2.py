@@ -20,7 +20,11 @@ class Interpreter(InterpreterBase):
     NIL_VALUE = create_value(InterpreterBase.NIL_DEF)
     TRUE_VALUE = create_value(InterpreterBase.TRUE_DEF)
     BIN_OPS = {"+", "-", "*", "/", "==", "!=", ">", ">=", "<", "<=", "||", "&&"}
-
+    DEFAULT_VAL = {
+        Type.INT: Value(Type.INT, 0),
+        Type.STRING: Value(Type.STRING, ""),
+        Type.BOOL: Value(Type.BOOL, False)
+    }
     # methods
     def __init__(self, console_output=True, inp=None, trace_output=False):
         super().__init__(console_output, inp)
@@ -41,10 +45,21 @@ class Interpreter(InterpreterBase):
         for func_def in ast.get("functions"):
             func_name = func_def.get("name")
             num_params = len(func_def.get("args"))
+            for arg in func_def.get("args"):
+                if not self.__is_valid_type(arg.get("var_type")):
+                    super().error(
+                        ErrorType.TYPE_ERROR,
+                        f"Invalid type {arg.get('var_type')} for argument {arg.get('name')}",
+                    )
+            if not self.__is_valid_type(func_def.get("return_type"), function=True):
+                super().error(
+                    ErrorType.TYPE_ERROR,
+                    f"Invalid type {func_def.get('return_type')} for return type",
+                )
             if func_name not in self.func_name_to_ast:
                 self.func_name_to_ast[func_name] = {}
             self.func_name_to_ast[func_name][num_params] = func_def
-
+    
     def __get_func_by_name(self, name, num_params):
         if name not in self.func_name_to_ast:
             super().error(ErrorType.NAME_ERROR, f"Function {name} not found")
@@ -105,14 +120,19 @@ class Interpreter(InterpreterBase):
                 ErrorType.NAME_ERROR,
                 f"Function {func_ast.get('name')} with {len(actual_args)} args not found",
             )
-
         # first evaluate all of the actual parameters and associate them with the formal parameter names
         args = {}
         for formal_ast, actual_ast in zip(formal_args, actual_args):
             result = copy.copy(self.__eval_expr(actual_ast))
             arg_name = formal_ast.get("name")
+            arg_type = formal_ast.get("var_type")
+            if arg_type != result.type():
+                super().error(
+                    ErrorType.TYPE_ERROR,
+                    f"Parameter {arg_name} has type {arg_type} but actual arg has type {result.type()}",
+                )
             args[arg_name] = result
-
+        print(args)
         # then create the new activation record 
         self.env.push_func()
         # and add the formal arguments to the activation record
@@ -145,16 +165,38 @@ class Interpreter(InterpreterBase):
             return Value(Type.STRING, inp)
 
     def __assign(self, assign_ast):
+        print(assign_ast)
         var_name = assign_ast.get("name")
+        express = assign_ast.get("expression")
+        print(express)
         value_obj = self.__eval_expr(assign_ast.get("expression"))
+        print(value_obj.type())
+        # if self.variable_to_type[var_name] != value_obj.type():
+        #     super().error(
+        #         ErrorType.TYPE_ERROR,
+        #         f"Types of target variable {var_name} and source value are incompatible",
+        #     )
         if not self.env.set(var_name, value_obj):
+            expected_type = self.env.get_type(var_name)  # Fetch the expected type from the environment
+            actual_type = value_obj.type()
+            if expected_type != actual_type:
+                super().error(
+                    ErrorType.TYPE_ERROR,
+                    f"Type mismatch: expected {expected_type}, got {actual_type} for {var_name}",
+                )
             super().error(
                 ErrorType.NAME_ERROR, f"Undefined variable {var_name} in assignment"
             )
     
     def __var_def(self, var_ast):
         var_name = var_ast.get("name")
-        if not self.env.create(var_name, Interpreter.NIL_VALUE):
+        var_type = var_ast.get("var_type")  
+        # need to extend this functionality to structs
+        if not self.__is_valid_type(var_type):
+            super().error(
+                ErrorType.TYPE_ERROR, f"Invalid type {var_type} for variable {var_name}"
+            )
+        if not self.env.create(var_name, Interpreter.DEFAULT_VAL[var_type], var_type):
             super().error(
                 ErrorType.NAME_ERROR, f"Duplicate definition for variable {var_name}"
             )
@@ -334,3 +376,10 @@ class Interpreter(InterpreterBase):
             return (ExecStatus.RETURN, Interpreter.NIL_VALUE)
         value_obj = copy.copy(self.__eval_expr(expr_ast))
         return (ExecStatus.RETURN, value_obj)
+    
+    def __is_valid_type(self, type, function=False):
+        # extend to structs
+        # but for now this works
+        if function:
+            return type in [Type.INT, Type.STRING, Type.BOOL, Type.NIL,Type.VOID]
+        return type in [Type.INT, Type.STRING, Type.BOOL, Type.NIL]
