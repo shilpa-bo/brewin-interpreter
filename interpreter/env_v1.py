@@ -10,7 +10,6 @@ class EnvironmentManager:
         for env in reversed(cur_func_env):
             if symbol in env:
                 return env[symbol][0]
-
         return None
 
     def set(self, symbol, value):
@@ -53,10 +52,3 @@ class EnvironmentManager:
     # used when we exit a nested block to discard the environment for that block
     def pop_func(self):
         self.environment.pop()
-
-# cur_func_env = self.environment[-1]
-# if f"{symbol}:{type}" in cur_func_env[-1]:   # symbol already defined in current scope
-#     return False
-# cur_func_env[-1][f"{symbol}:{type}"] = value
-# return True
-

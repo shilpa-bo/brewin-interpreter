@@ -4,8 +4,8 @@ from brewparse import parse_program
 # Call the function on the AST
 
 program = """
-func foo(a:int) : int {
-  return a+1;
+func foo(x:int, y:string)  : int{
+  x = 10;
 }
 
 func main(): void {

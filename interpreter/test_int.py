@@ -1,17 +1,15 @@
-from interpreterv2 import Interpreter
+from interpreterv3 import Interpreter
 
 program = """
-func foo(x:int, y:string)  : int{
-  x = 10;
-  return x+1;
+func main(): void {
+    if(9==true){
+        print("yeehaw");
+    }
+    else{
+        print("need an error bitches");
+    }
 }
 
-func main(): void {
-var x : int;
-x = 5;
-foo(x, "0");
-print(x);
-}
 """
 interpreter = Interpreter()
 interpreter.run(program)

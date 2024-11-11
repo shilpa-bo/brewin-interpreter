@@ -1,5 +1,5 @@
 import os
-from interpreterv2 import Interpreter
+from interpreter.interpreterv3 import Interpreter
 
 # Initialize the interpreter
 interpreter = Interpreter()

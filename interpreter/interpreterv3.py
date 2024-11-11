@@ -107,6 +107,7 @@ class Interpreter(InterpreterBase):
         actual_args = call_node.get("args")
         return self.__call_func_aux(func_name, actual_args)
 
+
     def __call_func_aux(self, func_name, actual_args):
         if func_name == "print":
             return self.__call_print(actual_args)
@@ -121,18 +122,21 @@ class Interpreter(InterpreterBase):
                 f"Function {func_ast.get('name')} with {len(actual_args)} args not found",
             )
         # first evaluate all of the actual parameters and associate them with the formal parameter names
+        # helper function?
         args = {}
         for formal_ast, actual_ast in zip(formal_args, actual_args):
             result = copy.copy(self.__eval_expr(actual_ast))
             arg_name = formal_ast.get("name")
             arg_type = formal_ast.get("var_type")
+            result = self.__coerce_value(arg_type, result)
             if arg_type != result.type():
                 super().error(
                     ErrorType.TYPE_ERROR,
                     f"Parameter {arg_name} has type {arg_type} but actual arg has type {result.type()}",
                 )
             args[arg_name] = result
-        print(args)
+        # helper function?
+
         # then create the new activation record 
         self.env.push_func()
         # and add the formal arguments to the activation record
@@ -140,6 +144,20 @@ class Interpreter(InterpreterBase):
           self.env.create(arg_name, value)
         _, return_val = self.__run_statements(func_ast.get("statements"))
         self.env.pop_func()
+
+        # helper function: get default return types:
+        func_return_type = func_ast.get("return_type")
+        # DEFAULT RETURN TYPES:
+        if not return_val.value() and func_return_type != Type.VOID:
+            return_val = Interpreter.DEFAULT_VAL[func_return_type]
+        if func_return_type == Type.VOID:
+            func_return_type = Type.NIL
+        return_val = self.__coerce_value(func_return_type, return_val)
+        if func_return_type != return_val.type():
+            super().error(
+                ErrorType.TYPE_ERROR,
+                f"Function {func_ast.get('name')} has return type {func_return_type} but actual return type is {return_val.type()}",
+            )
         return return_val
 
     def __call_print(self, args):
@@ -165,24 +183,15 @@ class Interpreter(InterpreterBase):
             return Value(Type.STRING, inp)
 
     def __assign(self, assign_ast):
-        print(assign_ast)
         var_name = assign_ast.get("name")
-        express = assign_ast.get("expression")
-        print(express)
         value_obj = self.__eval_expr(assign_ast.get("expression"))
-        print(value_obj.type())
-        # if self.variable_to_type[var_name] != value_obj.type():
-        #     super().error(
-        #         ErrorType.TYPE_ERROR,
-        #         f"Types of target variable {var_name} and source value are incompatible",
-        #     )
+        expected_type = self.env.get_type(var_name)  # Fetch the expected type from the environment
+        value_obj = self.__coerce_value(expected_type, value_obj)
         if not self.env.set(var_name, value_obj):
-            expected_type = self.env.get_type(var_name)  # Fetch the expected type from the environment
-            actual_type = value_obj.type()
-            if expected_type != actual_type:
+            if expected_type != value_obj.type():
                 super().error(
                     ErrorType.TYPE_ERROR,
-                    f"Type mismatch: expected {expected_type}, got {actual_type} for {var_name}",
+                    f"Type mismatch: expected {expected_type}, got {value_obj.type()} for {var_name}",
                 )
             super().error(
                 ErrorType.NAME_ERROR, f"Undefined variable {var_name} in assignment"
@@ -217,6 +226,17 @@ class Interpreter(InterpreterBase):
                 super().error(ErrorType.NAME_ERROR, f"Variable {var_name} not found")
             return val
         if expr_ast.elem_type == InterpreterBase.FCALL_NODE:
+            # void is not allowed as an argument 
+            # helper function?
+            func_name = expr_ast.get("name")
+            actual_args = expr_ast.get("args")
+            func_ast = self.func_name_to_ast[func_name][len(actual_args)]
+            return_type = func_ast.get("return_type")
+            if return_type == Type.VOID:
+                super().error(
+                    ErrorType.TYPE_ERROR, "Void not allowed as argument"
+                )
+            
             return self.__call_func(expr_ast)
         if expr_ast.elem_type in Interpreter.BIN_OPS:
             return self.__eval_op(expr_ast)
@@ -228,6 +248,8 @@ class Interpreter(InterpreterBase):
     def __eval_op(self, arith_ast):
         left_value_obj = self.__eval_expr(arith_ast.get("op1"))
         right_value_obj = self.__eval_expr(arith_ast.get("op2"))
+        operator = arith_ast.elem_type
+        left_value_obj, right_value_obj = self.__coerce_operands(operator, left_value_obj, right_value_obj)
         if not self.__compatible_types(
             arith_ast.elem_type, left_value_obj, right_value_obj
         ):
@@ -238,15 +260,12 @@ class Interpreter(InterpreterBase):
         if arith_ast.elem_type not in self.op_to_lambda[left_value_obj.type()]:
             super().error(
                 ErrorType.TYPE_ERROR,
-                f"Incompatible operator {arith_ast.elem_type} for type {left_value_obj.type()}",
+                f"Incompatible operator {operator} for type {left_value_obj.type()}",
             )
-        f = self.op_to_lambda[left_value_obj.type()][arith_ast.elem_type]
+        f = self.op_to_lambda[left_value_obj.type()][operator]
         return f(left_value_obj, right_value_obj)
 
     def __compatible_types(self, oper, obj1, obj2):
-        # DOCUMENT: allow comparisons ==/!= of anything against anything
-        if oper in ["==", "!="]:
-            return True
         return obj1.type() == obj2.type()
 
     def __eval_unary(self, arith_ast, t, f):
@@ -330,6 +349,7 @@ class Interpreter(InterpreterBase):
     def __do_if(self, if_ast):
         cond_ast = if_ast.get("condition")
         result = self.__eval_expr(cond_ast)
+        result = self.__coerce_value(Type.BOOL, result)
         if result.type() != Type.BOOL:
             super().error(
                 ErrorType.TYPE_ERROR,
@@ -355,7 +375,7 @@ class Interpreter(InterpreterBase):
         self.__run_statement(init_ast)  # initialize counter variable
         run_for = Interpreter.TRUE_VALUE
         while run_for.value():
-            run_for = self.__eval_expr(cond_ast)  # check for-loop condition
+            run_for = self.__coerce_value(Type.BOOL, self.__eval_expr(cond_ast)) # check for-loop condition
             if run_for.type() != Type.BOOL:
                 super().error(
                     ErrorType.TYPE_ERROR,
@@ -383,3 +403,20 @@ class Interpreter(InterpreterBase):
         if function:
             return type in [Type.INT, Type.STRING, Type.BOOL, Type.NIL,Type.VOID]
         return type in [Type.INT, Type.STRING, Type.BOOL, Type.NIL]
+
+    def __coerce_value(self, expected_type, actual_val):
+        if expected_type == actual_val.type():
+            return actual_val
+        if expected_type == Type.BOOL and actual_val.type() == Type.INT:
+            coerced_value = Value(Type.BOOL, actual_val.value() != 0)
+            return coerced_value
+        return actual_val
+        # can't coerce anything else
+    
+    def __coerce_operands(self, operator, op1, op2):
+        if operator in {"==", "!=", "&&", "||"}:
+            return self.__coerce_value(Type.BOOL, op1), self.__coerce_value(Type.BOOL, op2)
+        if op1.type() != op2.type():
+            raise ErrorType.TYPE_ERROR(
+                f"Incompatible types {op1.type()} and {op2.type()} for operator {operator}"
+            )
