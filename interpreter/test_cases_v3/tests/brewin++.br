@@ -9,9 +9,12 @@ func fact(n : int) : int {
   return n * fact(n-1);
 }
 
+
 /*
-*OUT*
-0
-bar
-false
+OUT
+
+Enter a number:
+5
+120
+
 */

@@ -1,12 +1,12 @@
 import os
-from interpreter.interpreterv3 import Interpreter
+from interpreterv3 import Interpreter
 
 # Initialize the interpreter
 interpreter = Interpreter()
 
 # Base directory for test cases
 # Test case directories should be in a directory called "test_cases"
-base_directory = os.path.join(os.getcwd(), "test_cases")
+base_directory = os.path.join(os.getcwd(), "test_cases_v3")
 
 # Function to run all tests in a specified directory
 def run_tests(test_file):
@@ -38,8 +38,8 @@ if __name__ == "__main__":
     # print("Running Fails")
     # run_tests("fails")
 
-    # print("Running Tests")
-    # run_tests("tests")
-    run_1("tests", "rename.br")    
-    # run_1("tests", "test_scope1.br")
-    # run_1("tests", "test_scope2.br")
+    print("Running Tests")
+    run_tests("tests")
+    # run_1("tests", "rename.br")    
+    # # run_1("tests", "test_scope1.br")
+    # # run_1("tests", "test_scope2.br")
