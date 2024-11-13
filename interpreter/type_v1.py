@@ -8,18 +8,22 @@ class Type:
     STRING = "string"
     NIL = "nil"
     VOID = "void"
+    STRUCT = "struct"
 
 
 # Represents a value, which has a type and its value
 class Value:
-    def __init__(self, type, value=None):
+    def __init__(self, type, value=None, struct=None):
         self.t = type
         self.v = value
+        self.struct_name = struct
 
     def value(self):
         return self.v
 
     def type(self):
+        if self.t == Type.STRUCT and self.struct_name:
+            return self.struct_name
         return self.t
 
 
@@ -30,6 +34,8 @@ def create_value(val):
         return Value(Type.BOOL, False)
     elif val == InterpreterBase.NIL_DEF:
         return Value(Type.NIL, None)
+    elif val == InterpreterBase.STRUCT_NODE:
+        return Value(Type.STRUCT, "nil")
     elif isinstance(val, str):
         return Value(Type.STRING, val)
     elif isinstance(val, int):
@@ -47,4 +53,8 @@ def get_printable(val):
         if val.value() is True:
             return "true"
         return "false"
+    if val.type() == Type.NIL:
+        return "nil"
+    if val.type() == Type.STRUCT:
+        return val.value()
     return None

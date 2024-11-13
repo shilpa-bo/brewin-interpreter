@@ -4,38 +4,54 @@ from brewparse import parse_program
 # Call the function on the AST
 
 program = """
-func foo(x:int, y:string)  : int{
-  x = 10;
+struct flea {
+  age: int;
+  infected : bool;
 }
 
-func main(): void {
-   foo(9);
+struct dog {
+  name: string;
+  vaccinated: bool;  
+  companion: flea;
 }
+
+func main() : void {
+  var d: dog;     
+  d = new dog;   /* sets d object reference to point to a dog structure */
+
+  print(d.vaccinated); /* prints false - default bool value */
+  print(d.companion); /* prints nil - default struct object reference */
+
+  /* we may now set d's fields */
+  d.name = "Koda";
+  d.vaccinated = true;
+  d.companion = new flea;
+
+
+  }
 """
 ast = parse_program(program)
 print(ast)
 print("***PARSING***")
 # Assuming 'ast' contains the parsed AST structure
+for struct in ast.get('structs'):
+    print(struct)
+    print(struct.get("name"))
+    for field in (struct.get("fields")):
+        print(field)
+        print(field.get("name"))
+        print(field.get("var_type"))
+
+print("***STATEMENTS***")
 for func in ast.get('functions'):
     print(f"Current Function: {func.get('name')}")
     for statement in func.get('statements'):
         print(statement)
-        if statement.elem_type == 'vardef':
-            vardef = statement
+        if statement.elem_type == '=':
+            print(statement.get('expression'))
+            statement = statement.get('expression')
+            print(statement.elem_type)
             print(statement.get("var_type"))
-#         print("\nFunction 'main' statements:")
-#         for statement in main.get('statements'):
-#             pretty_print_ast(statement)
-#             if statement.elem_type == 'if':
-#                 if_statement = statement
-#                 print("\nFunction 'if' statements:")
-#                 # condition = statement.get('condition')
-#                 # print("Condition: ", condition)
-#                 # print("Statements: ")
-#                 for statement in if_statement.get('statements'):
-#                     print("Statement", statement)
-#                 for statement in if_statement.get('else_statements'):
-#                     print("Else Statement", statement)
 
 # # for func in ast.get('functions'):
 # #     if func.get('name') == 'main':
