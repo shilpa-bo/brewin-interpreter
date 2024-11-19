@@ -16,7 +16,7 @@ class EnvironmentManager:
         cur_func_env = self.environment[-1]
         for env in reversed(cur_func_env):
             if symbol in env:
-                if env[symbol][1] != value.type():
+                if env[symbol][1] != value.type() and env[symbol][1] != value.struct_name():
                     return False
                 env[symbol][0] = value
                 return True

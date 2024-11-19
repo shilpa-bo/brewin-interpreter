@@ -17,6 +17,7 @@ class StructDefinition:
     def __init__(self, name, fields):
         self.name = name # Struct Name
         self.fields = fields # A dictionary of field names to types
+        self.is_initialized = False  # Tracks whether the struct is initialized
 
 # Main interpreter class
 class Interpreter(InterpreterBase):
@@ -24,6 +25,7 @@ class Interpreter(InterpreterBase):
     NIL_VALUE = create_value(InterpreterBase.NIL_DEF)
     TRUE_VALUE = create_value(InterpreterBase.TRUE_DEF)
     BIN_OPS = {"+", "-", "*", "/", "==", "!=", ">", ">=", "<", "<=", "||", "&&"}
+    BUILT_IN_FUNCTIONS = {"inputi", "inputs"}
     # methods
     def __init__(self, console_output=True, inp=None, trace_output=False):
         super().__init__(console_output, inp)
@@ -151,8 +153,12 @@ class Interpreter(InterpreterBase):
             result = copy.copy(self.__eval_expr(actual_ast))
             arg_name = formal_ast.get("name")
             arg_type = formal_ast.get("var_type")
+            # check if var is initialized if not, let the type be the name of the struct
             result = self.__coerce_value(arg_type, result)
-            if arg_type != result.type():
+            if arg_type in self.struct_definitions and result.type() == Type.NIL:
+                pass
+            # check if the actual arg has the same type as the formal
+            elif arg_type != result.type() and arg_type != result.struct_name():
                 super().error(
                     ErrorType.TYPE_ERROR,
                     f"Parameter {arg_name} has type {arg_type} but actual arg has type {result.type()}",
@@ -176,7 +182,7 @@ class Interpreter(InterpreterBase):
         if func_return_type == Type.VOID:
             func_return_type = Type.NIL
         return_val = self.__coerce_value(func_return_type, return_val)
-        if func_return_type != return_val.type():
+        if func_return_type != return_val.type() and func_return_type != return_val.struct_name():
             super().error(
                 ErrorType.TYPE_ERROR,
                 f"Function {func_ast.get('name')} has return type {func_return_type} but actual return type is {return_val.type()}",
@@ -219,16 +225,35 @@ class Interpreter(InterpreterBase):
         value_obj = self.__eval_expr(assign_ast.get("expression"))
         if "." in var_name:
             # Handle struct field assignment
-            self.__assign_field(var_name, value_obj)
+            return self.__assign_field(var_name, value_obj)
         else:
-            expected_type = self.env.get(var_name)[0].type()
+            expected_type, var_obj = self.env.get(var_name)
+            if not var_obj:  # var obj not in struct definitions?
+                super().error(
+                    ErrorType.NAME_ERROR, f"Undefined variable {var_name} in assignment"
+                )
+            if value_obj.type() == Type.NIL and var_obj in self.struct_definitions:
+                struct_def = self.struct_definitions[var_obj]
+                if not struct_def.is_initialized:
+                    self.env.set(var_name, value_obj)
+                    return
+                else:
+                    super().error(
+                        ErrorType.FAULT_ERROR, f"Cannot assign nil to initialized struct {var_name}"
+                    )
+            if var_obj in self.struct_definitions:
+                struct_def = self.struct_definitions[var_obj]
+                if not struct_def.is_initialized and value_obj.type() == Type.STRUCT:
+                    self.env.set(var_name, value_obj)
+                    struct_def.is_initialized = True
+                    return
+
             value_obj = self.__coerce_value(expected_type, value_obj)
             if not self.env.set(var_name, value_obj):
-                print(var_name, value_obj.type())
-                if expected_type != value_obj.type():
+                if expected_type.type() != value_obj.type() and expected_type != value_obj.struct_name():
                     super().error(
                         ErrorType.TYPE_ERROR,
-                        f"Type mismatch: expected {expected_type}, got {value_obj.type()} for {var_name}",
+                        f"Type mismatch: expected {expected_type.type()}, got {value_obj.type()} for {var_name}",
                     )
                 super().error(
                     ErrorType.NAME_ERROR, f"Undefined variable {var_name} in assignment"
@@ -248,7 +273,7 @@ class Interpreter(InterpreterBase):
 
         # Traverse the field chain, keeping track of the parent and field to update
         for field_name in field_chain[1:]:
-            if curr_struct_value.type() not in self.struct_definitions:
+            if curr_struct_value.struct_name() not in self.struct_definitions:
                 super().error(ErrorType.TYPE_ERROR, f"Variable {struct_symbol} is not a valid struct")
             if field_name not in curr_struct_value.value():
                 super().error(
@@ -276,25 +301,21 @@ class Interpreter(InterpreterBase):
         var_name = var_ast.get("name")
         var_type = var_ast.get("var_type")  
 
-        # need to extend this functionality to structs
-        # check if type is valid- struct is defined
+        # might be redundant? 
         if not self.__is_valid_type(var_type):
             super().error(
                 ErrorType.TYPE_ERROR, f"Invalid type {var_type} for variable {var_name}"
             )
-        # get the default value for struct
-        # so we need to do this for structs
-        # need to initiialize a struct p to nil
-        # and then create it with the fefault value and var_type which is struct
-        # var_type is the name of the person
-        # we know if it is a struct if we check it is in the struct definitions
-        try:
+        is_struct = var_type in self.struct_definitions
+        if is_struct:
             default_value = self.__get_default_value(var_type)
-        except ValueError:
-            super().error(
-                ErrorType.TYPE_ERROR, f"No default value for type {var_type}"
-            )
-
+        else:
+            try:
+                default_value = self.__get_default_value(var_type)
+            except ValueError:
+                super().error(
+                    ErrorType.TYPE_ERROR, f"No default value for type {var_type}"
+                )
         if not self.env.create(var_name, default_value, var_type):
             super().error(
                 ErrorType.NAME_ERROR, f"Duplicate definition for variable {var_name}"
@@ -314,11 +335,14 @@ class Interpreter(InterpreterBase):
         instance = {}
         for field_name, field_type in struct_definition.fields.items():
             instance[field_name] = self.__get_default_value(field_type)
+        
+        struct_definition.is_initialized = True
 
         # Return a struct Value object with initialized fields
         return Value(Type.STRUCT, instance, struct_type)
 
     def __eval_expr(self, expr_ast):
+
         if expr_ast.elem_type == InterpreterBase.NIL_NODE:
             return Interpreter.NIL_VALUE
         if expr_ast.elem_type == InterpreterBase.INT_NODE:
@@ -332,6 +356,9 @@ class Interpreter(InterpreterBase):
             if "." in var_name:
                 return self.__handle_dot_operator(var_name)
             val = self.env.get(var_name)[0]
+            if val.type() == Type.STRUCT and val.value() == Type.NIL: # unitialized struct
+                return Value(Type.STRUCT, "nil", val.struct_name())
+            
             if val is None:
                 super().error(ErrorType.NAME_ERROR, f"Variable {var_name} not found")
             return val
@@ -341,14 +368,15 @@ class Interpreter(InterpreterBase):
             # void is not allowed as an argument 
             # helper function?
             func_name = expr_ast.get("name")
-            actual_args = expr_ast.get("args")
-            func_ast = self.func_name_to_ast[func_name][len(actual_args)]
-            return_type = func_ast.get("return_type")
-            if return_type == Type.VOID:
-                super().error(
-                    ErrorType.TYPE_ERROR, "Void not allowed as argument"
-                )
-            
+            if func_name not in Interpreter.BUILT_IN_FUNCTIONS:
+                actual_args = expr_ast.get("args")
+                func_ast = self.func_name_to_ast[func_name][len(actual_args)]
+                return_type = func_ast.get("return_type")
+                if return_type == Type.VOID:
+                    super().error(
+                        ErrorType.TYPE_ERROR, "Void not allowed as argument"
+                    )
+                
             return self.__call_func(expr_ast)
         if expr_ast.elem_type in Interpreter.BIN_OPS:
             return self.__eval_op(expr_ast)
@@ -361,31 +389,45 @@ class Interpreter(InterpreterBase):
         left_value_obj = self.__eval_expr(arith_ast.get("op1"))
         right_value_obj = self.__eval_expr(arith_ast.get("op2"))
         operator = arith_ast.elem_type
-        left_value_obj, right_value_obj = self.__coerce_operands(operator, left_value_obj, right_value_obj)
-        if not self.__compatible_types(
-            arith_ast.elem_type, left_value_obj, right_value_obj
-        ):
+        left_value_obj, right_value_obj = self.__coerce_bin_operands(operator, left_value_obj, right_value_obj)
+
+        if operator in {"==", "!="}:
+            if left_value_obj.value() == "nil" or right_value_obj.value() == "nil":
+                if left_value_obj.value() == "nil" and left_value_obj.type() == Type.STRUCT and right_value_obj.type() == "nil":
+                    return Value(Type.BOOL, operator == "==")
+                elif right_value_obj.value() == "nil" and right_value_obj.type() == Type.STRUCT and  left_value_obj.type() == "nil":
+                    return Value(Type.BOOL, operator == "==")
+
+        if not self.__compatible_types(arith_ast.elem_type, left_value_obj, right_value_obj):
             super().error(
                 ErrorType.TYPE_ERROR,
                 f"Incompatible types for {arith_ast.elem_type} operation",
             )
+
         if arith_ast.elem_type not in self.op_to_lambda[left_value_obj.type()]:
             super().error(
                 ErrorType.TYPE_ERROR,
                 f"Incompatible operator {operator} for type {left_value_obj.type()}",
             )
+
         f = self.op_to_lambda[left_value_obj.type()][operator]
         return f(left_value_obj, right_value_obj)
 
     def __compatible_types(self, oper, obj1, obj2):
-        return obj1.type() == obj2.type()
+        obj1_t = obj1.type()
+        obj2_t = obj2.type()
+        if (obj1_t == Type.STRUCT and obj2_t == Type.NIL) or (obj2_t==Type.STRUCT and obj1_t == Type.NIL):
+            return True
+        return obj1_t == obj2_t
 
     def __eval_unary(self, arith_ast, t, f):
         value_obj = self.__eval_expr(arith_ast.get("op1"))
+        operator = arith_ast.elem_type
+        value_obj = self.__coerce_unary_operand(operator, value_obj)
         if value_obj.type() != t:
             super().error(
                 ErrorType.TYPE_ERROR,
-                f"Incompatible type for {arith_ast.elem_type} operation",
+                f"Incompatible type for {operator} operation",
             )
         return Value(t, f(value_obj.value()))
 
@@ -455,8 +497,22 @@ class Interpreter(InterpreterBase):
             Type.BOOL, x.type() == y.type() and x.value() == y.value()
         )
         self.op_to_lambda[Type.NIL]["!="] = lambda x, y: Value(
-            Type.BOOL, x.type() != y.type() or x.value() != y.value()
+            Type.BOOL,
+            not ((x.type() == y.type() and x.value() == y.value()) or (x.value() == "nil" and y.value() == "nil")),
         )
+
+        
+        # Set up operations on structs
+        self.op_to_lambda[Type.STRUCT] = {}
+        self.op_to_lambda[Type.STRUCT]["=="] = lambda x, y: Value(
+            Type.BOOL,
+            (x.type() == y.type() and x.value() == y.value()) or (x.value() == "nil" and y.value() == "nil"),
+        )
+        self.op_to_lambda[Type.STRUCT]["!="] = lambda x, y: Value(
+            Type.BOOL,
+            not ((x.type() == y.type() and x.value() == y.value()) or (x.value() == "nil" and y.value() == "nil")),
+        )
+
 
     def __do_if(self, if_ast):
         cond_ast = if_ast.get("condition")
@@ -520,6 +576,8 @@ class Interpreter(InterpreterBase):
             return create_value(InterpreterBase.NIL_DEF)
         if var_type in self.struct_definitions:  # Struct support CHANGE THIS
             return Value(Type.STRUCT, "nil", var_type)
+        if var_type == Type.STRUCT: # change this???
+            return Value(Type.STRUCT, "nil")
         raise ValueError(f"No default value for type {var_type}") # maybe change this??
 
     def __is_valid_type(self, type, function=False):
@@ -532,13 +590,26 @@ class Interpreter(InterpreterBase):
     def __coerce_value(self, expected_type, actual_val):
         if expected_type == actual_val.type():
             return actual_val
+        if expected_type == actual_val.struct_name() and actual_val.type() == Type.STRUCT:
+            if expected_type in self.struct_definitions:
+                if actual_val.struct_name() != expected_type:
+                    super().error(
+                        ErrorType.TYPE_ERROR,
+                        f"Expected struct type {expected_type} but got {actual_val.struct_name}",
+                    )
+                return actual_val
         if expected_type == Type.BOOL and actual_val.type() == Type.INT:
             coerced_value = Value(Type.BOOL, actual_val.value() != 0)
             return coerced_value
         return actual_val
         # can't coerce anything else
     
-    def __coerce_operands(self, operator, op1, op2):
+    def __coerce_unary_operand(self, operator, op1):
+        if operator == "!":
+            return self.__coerce_value(Type.BOOL, op1)
+        return op1
+    
+    def __coerce_bin_operands(self, operator, op1, op2):
         if operator in {"==", "!=", "&&", "||"}:
             return self.__coerce_value(Type.BOOL, op1), self.__coerce_value(Type.BOOL, op2)
         if op1.type() != op2.type():
@@ -546,10 +617,12 @@ class Interpreter(InterpreterBase):
                 f"Incompatible types {op1.type()} and {op2.type()} for operator {operator}"
             )
         return op1, op2
+    
     def __handle_dot_operator(self, var_name):
         field_chain = var_name.split(".")
         struct_symbol = field_chain[0]
         struct_value = self.env.get(struct_symbol)[0]
+        struct_name = self.env.get(struct_symbol)[1]
         # struct_symbol, field_name = var_name.split(".")
         # struct_value = self.env.get(struct_symbol)[0]
         # Check if the struct is nil
@@ -562,25 +635,15 @@ class Interpreter(InterpreterBase):
         #     print(key, val.type(), val.value())
         curr_struct_value = struct_value
         for field_name in field_chain[1:]:
-            if curr_struct_value.type() not in self.struct_definitions:
+            if curr_struct_value.struct_name() not in self.struct_definitions:
                 super().error(
                     ErrorType.TYPE_ERROR,
-                    f"Variable {curr_struct_value.type()} is not a valid struct",
+                    f"Variable {curr_struct_value.struct_name()} is not a valid struct",
                 )
             if field_name not in curr_struct_value.value():
                 super().error(
-                    ErrorType.NAME_ERROR, f"Field {field_name} not found in struct {curr_struct_value.type()}"
+                    ErrorType.NAME_ERROR, f"Field {field_name} not found in struct {curr_struct_value.struct_name()}"
                 )
             curr_struct_value = curr_struct_value.value()[field_name]
-            
-        # struct_type = struct_value.type()
-        # if struct_type not in self.struct_definitions:
-        #     super().error(ErrorType.TYPE_ERROR, f"Variable {struct_symbol} is not a valid struct")
-
-        # Validate and retrieve the field
-        # if field_name not in struct_value.value():
-        #     super().error(
-        #         ErrorType.NAME_ERROR, f"Field {field_name} not found in struct {struct_type}"
-        #     )
 
         return curr_struct_value

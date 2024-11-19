@@ -4,31 +4,15 @@ from brewparse import parse_program
 # Call the function on the AST
 
 program = """
-struct flea {
-  age: int;
-  infected : bool;
-}
-
-struct dog {
+struct animal {
   name: string;
-  vaccinated: bool;  
-  companion: flea;
+  extinct: bool;
 }
-
 func main() : void {
-  var d: dog;     
-  d = new dog;   /* sets d object reference to point to a dog structure */
-
-  print(d.vaccinated); /* prints false - default bool value */
-  print(d.companion); /* prints nil - default struct object reference */
-
-  /* we may now set d's fields */
-  d.name = "Koda";
-  d.vaccinated = true;
-  d.companion = new flea;
-
-
-  }
+  var a: animal;
+  a = nil;
+  print(a);
+}
 """
 ast = parse_program(program)
 print(ast)

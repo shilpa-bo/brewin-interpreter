@@ -1,18 +1,28 @@
 from interpreterv3 import Interpreter
-
-program = """
-func main() : void {
-  var n : int;
-  print(n);
-  n = inputi("hi");
-
-  }
-
-func fact(n : int) : int {
-  if (n <= 1) { return 1; }
-  return n * fact(n-1);
+program3 = """
+struct animal {
+  name: string;
+  extinct: bool;
+}
+func foo(a : animal) : animal{
+print("FOO");
+return a;
+}
+func main() : void{
+var a : animal;
+foo(nil);
+}
+"""
+program4 = """
+struct a {
+  inner : int;
 }
 
+func main() : void {
+  var a : a;
+  print(nil == a);
+}
 """
+
 interpreter = Interpreter()
-interpreter.run(program)
+interpreter.run(program3)

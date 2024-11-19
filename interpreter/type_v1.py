@@ -16,16 +16,18 @@ class Value:
     def __init__(self, type, value=None, struct=None):
         self.t = type
         self.v = value
-        self.struct_name = struct
+        self.s = struct
 
     def value(self):
         return self.v
 
     def type(self):
-        if self.t == Type.STRUCT and self.struct_name:
-            return self.struct_name
+        # if struct -> type is nil
         return self.t
 
+    def struct_name(self):
+        return self.s
+        
 
 def create_value(val):
     if val == InterpreterBase.TRUE_DEF:
