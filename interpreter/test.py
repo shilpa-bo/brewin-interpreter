@@ -1,41 +1,36 @@
-from brewparse import parse_program
+from parser.brewparse import parse_program
 
 
 # Call the function on the AST
 
 program = """
-struct animal {
-  name: string;
-  extinct: bool;
+func main() {
+  var result;
+  result = f(3) + 10;
+  print("done with call!");
+  print(result);  /* evaluation of result happens here */
+  if (result == 2){
+    print("hi");
+  }
 }
-func main() : void {
-  var a: animal;
-  a = nil;
-  print(a);
+
+func f(x) {
+  print("f is running");
+  return 2*y;
+
+
 }
+
 """
 ast = parse_program(program)
 print(ast)
 print("***PARSING***")
 # Assuming 'ast' contains the parsed AST structure
-for struct in ast.get('structs'):
-    print(struct)
-    print(struct.get("name"))
-    for field in (struct.get("fields")):
-        print(field)
-        print(field.get("name"))
-        print(field.get("var_type"))
-
 print("***STATEMENTS***")
 for func in ast.get('functions'):
     print(f"Current Function: {func.get('name')}")
     for statement in func.get('statements'):
         print(statement)
-        if statement.elem_type == '=':
-            print(statement.get('expression'))
-            statement = statement.get('expression')
-            print(statement.elem_type)
-            print(statement.get("var_type"))
 
 # # for func in ast.get('functions'):
 # #     if func.get('name') == 'main':

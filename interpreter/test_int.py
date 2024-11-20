@@ -1,28 +1,31 @@
-from interpreterv3 import Interpreter
+from interpreterv4 import Interpreter
+from interpreterv4DEBUG import Interpreter as DEBUGInterpreter
 program3 = """
-struct animal {
-  name: string;
-  extinct: bool;
-}
-func foo(a : animal) : animal{
-print("FOO");
-return a;
-}
-func main() : void{
-var a : animal;
-foo(nil);
+
+func main(){
+var x;
+x = "hi";
+print(x);
+print(x);
 }
 """
 program4 = """
-struct a {
-  inner : int;
+func main() {
+  var result;
+  result = f(3);
+  print("hi");
+  print(result);
 }
 
-func main() : void {
-  var a : a;
-  print(nil == a);
+func f(x) {
+  print("in f(x)");
+  return 2*x;
 }
+
 """
 
-interpreter = Interpreter()
-interpreter.run(program3)
+# interpreter = Interpreter()
+# interpreter.run(program4)
+print("***DEBUG***")
+debug_int = DEBUGInterpreter()
+debug_int.run(program4)

@@ -1,5 +1,5 @@
-from element import Element
-from brewlex import *
+from parser.element import Element
+from parser.brewlex import *
 from intbase import InterpreterBase
 from ply import yacc
 
