@@ -3,31 +3,17 @@
 import copy
 from enum import Enum
 
-from parser.brewparse import parse_program
-from env_v4 import EnvironmentManager
+from brewparse import parse_program
+from env_v2 import EnvironmentManager
 from intbase import InterpreterBase, ErrorType
-from type_v4 import Type, Value, create_value, get_printable
+from type_valuev2 import Type, Value, create_value, get_printable
 
 
 class ExecStatus(Enum):
     CONTINUE = 1
     RETURN = 2
 
-class LazyExpression:
-    def __init__(self, eval_func):
-        self.eval_func = eval_func
-        self.cached_value = None
-        self.evaluated = False
 
-    def evaluate(self):
-        if not self.evaluated:
-            result = self.eval_func()  # Call the lambda
-            self.cached_value = result
-        if isinstance(self.cached_value, LazyExpression):
-            self.cached_value = self.cached_value.evaluate()
-        self.evaluated = True
-        return self.cached_value
-    
 # Main interpreter class
 class Interpreter(InterpreterBase):
     # constants
@@ -101,12 +87,12 @@ class Interpreter(InterpreterBase):
 
         return (status, return_val)
     
-    def __call_func(self, call_node, context="lazy"):
+    def __call_func(self, call_node):
         func_name = call_node.get("name")
         actual_args = call_node.get("args")
         return self.__call_func_aux(func_name, actual_args)
 
-    def __call_func_aux(self, func_name, actual_args, context="lazy"):
+    def __call_func_aux(self, func_name, actual_args):
         if func_name == "print":
             return self.__call_print(actual_args)
         if func_name == "inputi" or func_name == "inputs":
@@ -139,9 +125,7 @@ class Interpreter(InterpreterBase):
     def __call_print(self, args):
         output = ""
         for arg in args:
-            result = self.__eval_expr(arg, context="eager")  # result is a Value object
-            if isinstance(result, LazyExpression):
-                result = result.evaluate()
+            result = self.__eval_expr(arg)  # result is a Value object
             output = output + get_printable(result)
         super().output(output)
         return Interpreter.NIL_VALUE
@@ -175,9 +159,7 @@ class Interpreter(InterpreterBase):
                 ErrorType.NAME_ERROR, f"Duplicate definition for variable {var_name}"
             )
 
-    def __eval_expr(self, expr_ast, context="lazy"):
-        if context == "lazy":
-            return LazyExpression(lambda: self.__eval_expr(expr_ast, context="eager"))
+    def __eval_expr(self, expr_ast):
         if expr_ast.elem_type == InterpreterBase.NIL_NODE:
             return Interpreter.NIL_VALUE
         if expr_ast.elem_type == InterpreterBase.INT_NODE:
@@ -187,9 +169,6 @@ class Interpreter(InterpreterBase):
         if expr_ast.elem_type == InterpreterBase.BOOL_NODE:
             return Value(Type.BOOL, expr_ast.get("val"))
         if expr_ast.elem_type == InterpreterBase.VAR_NODE:
-            # here I want to return val if it is not a lazy expression, otherwise evaluate it?
-            # does this make sense?
-            # IDK
             var_name = expr_ast.get("name")
             val = self.env.get(var_name)
             if val is None:
@@ -204,11 +183,9 @@ class Interpreter(InterpreterBase):
         if expr_ast.elem_type == Interpreter.NOT_NODE:
             return self.__eval_unary(expr_ast, Type.BOOL, lambda x: not x)
 
-    def __eval_op(self, arith_ast, context="lazy"):
-        if context == "lazy":
-            return LazyExpression(lambda: self.__eval_op(arith_ast, context="eager"))
-        left_value_obj = self.__eval_expr(arith_ast.get("op1"), context="eager")
-        right_value_obj = self.__eval_expr(arith_ast.get("op2"), context="eager")
+    def __eval_op(self, arith_ast):
+        left_value_obj = self.__eval_expr(arith_ast.get("op1"))
+        right_value_obj = self.__eval_expr(arith_ast.get("op2"))
         if not self.__compatible_types(
             arith_ast.elem_type, left_value_obj, right_value_obj
         ):

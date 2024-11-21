@@ -11,11 +11,10 @@ print(x);
 """
 program4 = """
 func main() {
-  var result;
-  result = f(3);
-  print("hi");
+var result;
+  result =f(3);
   print(result);
-}
+  }
 
 func f(x) {
   print("in f(x)");
@@ -24,8 +23,10 @@ func f(x) {
 
 """
 
-# interpreter = Interpreter()
-# interpreter.run(program4)
-print("***DEBUG***")
-debug_int = DEBUGInterpreter()
-debug_int.run(program4)
+n = input("Enter D for Debug, N for Normal: ")
+if n.upper() == "D":
+  debug_int = DEBUGInterpreter()
+  debug_int.run(program4)
+else:
+  interpreter = Interpreter()
+  interpreter.run(program4)

@@ -5,20 +5,12 @@ from parser.brewparse import parse_program
 
 program = """
 func main() {
-  var result;
-  result = f(3) + 10;
-  print("done with call!");
-  print(result);  /* evaluation of result happens here */
-  if (result == 2){
-    print("hi");
+  print(f(3));
   }
-}
 
 func f(x) {
-  print("f is running");
-  return 2*y;
-
-
+  print("in f(x)");
+  return 2*x;
 }
 
 """
