@@ -10,17 +10,15 @@ print(x);
 }
 """
 program4 = """
-func main() {
-var result;
-  result =f(3);
-  print(result);
-  }
-
-func f(x) {
-  print("in f(x)");
-  return 2*x;
+func f(x){
+return 2;
 }
 
+func main() {
+var res;
+res = f(2);
+print(res);
+}
 """
 
 n = input("Enter D for Debug, N for Normal: ")

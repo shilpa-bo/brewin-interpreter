@@ -5,7 +5,8 @@ from parser.brewparse import parse_program
 
 program = """
 func main() {
-  print(f(3));
+  var x;
+  x = f(3);
   }
 
 func f(x) {

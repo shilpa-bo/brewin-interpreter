@@ -3,16 +3,38 @@
 import copy
 from enum import Enum
 
-from brewparse import parse_program
-from env_v2 import EnvironmentManager
+from parser.brewparse import parse_program
+from env_v4 import EnvironmentManager
 from intbase import InterpreterBase, ErrorType
-from type_valuev2 import Type, Value, create_value, get_printable
+from type_v4 import Type, Value, create_value, get_printable
 
 
 class ExecStatus(Enum):
     CONTINUE = 1
     RETURN = 2
 
+# "Thunk" datatype for Lazy Evaluation:
+class Thunk:
+    def __init__(self, expr, env, eval_func):
+        self._expr = expr
+        self._env = env
+        self._eval_func = eval_func
+        self._evaluated = False
+        self._value = None
+    def evaluate(self):
+        if not self._evaluated:
+            # Evaluate the stored expression
+            # context is being passed in weird here?
+            self._value = self._eval_func(self._expr, self._env)
+            self._evaluated = True
+        # Keep evaluating if the result is another Thunk
+        # Don't know if this will work with nested thunks or recursion??
+        while isinstance(self._value, Thunk):
+            self._value = self._value.evaluate()
+        return self._value
+    @staticmethod
+    def isThunk(obj):
+        return isinstance(obj, Thunk)
 
 # Main interpreter class
 class Interpreter(InterpreterBase):
@@ -25,8 +47,24 @@ class Interpreter(InterpreterBase):
     def __init__(self, console_output=True, inp=None, trace_output=False):
         super().__init__(console_output, inp)
         self.trace_output = trace_output
-        self.__setup_ops()
+        self.__setup_ops()  
 
+    def forceeval(self, value):
+        if isinstance(value, Thunk):
+            return value.evaluate()
+        return value
+    
+    def meval(self, expr, env, context="lazy"):
+        # something is off about the context
+        if context == "lazy":
+            # wrap the expression in a thunk for later evaluation
+            return Thunk(expr, env, lambda e, env: self.__eval_expr(e, context="eager"))
+        
+        elif context == "eager":
+            if isinstance(expr, Thunk):
+                return expr.evaluate()
+        return self.__evaluate_expr(expr)
+    
     # run a program that's provided in a string
     # usese the provided Parser found in brewparse.py to parse the program
     # into an abstract syntax tree (ast)
@@ -73,7 +111,8 @@ class Interpreter(InterpreterBase):
         status = ExecStatus.CONTINUE
         return_val = None
         if statement.elem_type == InterpreterBase.FCALL_NODE:
-            self.__call_func(statement)
+            # self.meval(statement, self.env, context="eager").evaluate()
+            self.__call_func(statement, context="eager")
         elif statement.elem_type == "=":
             self.__assign(statement)
         elif statement.elem_type == InterpreterBase.VAR_DEF_NODE:
@@ -87,7 +126,10 @@ class Interpreter(InterpreterBase):
 
         return (status, return_val)
     
-    def __call_func(self, call_node):
+    def __call_func(self, call_node, context="lazy"):
+        if context=="lazy":
+            return Thunk(call_node, self.env, lambda e, env: self.__call_func(e, context="eager"))
+            # if i need to pass in an environemnt with the lambda-> lambda e, env: self.__call_func(e, context="eager") 
         func_name = call_node.get("name")
         actual_args = call_node.get("args")
         return self.__call_func_aux(func_name, actual_args)
@@ -125,7 +167,9 @@ class Interpreter(InterpreterBase):
     def __call_print(self, args):
         output = ""
         for arg in args:
-            result = self.__eval_expr(arg)  # result is a Value object
+            result = self.meval(arg, self.env, context="eager") # need every result to be eagerly evaluated
+            if isinstance(result, Thunk):
+                result = result.evaluate()
             output = output + get_printable(result)
         super().output(output)
         return Interpreter.NIL_VALUE
@@ -159,7 +203,10 @@ class Interpreter(InterpreterBase):
                 ErrorType.NAME_ERROR, f"Duplicate definition for variable {var_name}"
             )
 
-    def __eval_expr(self, expr_ast):
+    def __eval_expr(self, expr_ast, context="lazy"):
+        return self.meval(expr_ast, self.env, context)
+
+    def __evaluate_expr(self, expr_ast):
         if expr_ast.elem_type == InterpreterBase.NIL_NODE:
             return Interpreter.NIL_VALUE
         if expr_ast.elem_type == InterpreterBase.INT_NODE:
