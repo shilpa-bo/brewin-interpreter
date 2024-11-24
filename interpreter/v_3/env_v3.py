@@ -10,25 +10,25 @@ class EnvironmentManager:
         for env in reversed(cur_func_env):
             if symbol in env:
                 return env[symbol]
+
         return None
 
     def set(self, symbol, value):
         cur_func_env = self.environment[-1]
         for env in reversed(cur_func_env):
             if symbol in env:
-                if env[symbol][1] != value.type() and env[symbol][1] != value.struct_name():
-                    return False
-                env[symbol][0] = value
+                env[symbol] = value
                 return True
+
         return False
 
     # create a new symbol in the top-most environment, regardless of whether that symbol exists
     # in a lower environment
-    def create(self, symbol, value, type=None):
+    def create(self, symbol, value):
         cur_func_env = self.environment[-1]
         if symbol in cur_func_env[-1]:   # symbol already defined in current scope
             return False
-        cur_func_env[-1][symbol] = [value, type]
+        cur_func_env[-1][symbol] = value
         return True
 
     # used when we enter a new function - start with empty dictionary to hold parameters.

@@ -11,13 +11,11 @@ print(x);
 """
 program4 = """
 func f(x){
-return 2;
+return 2*x;
 }
 
 func main() {
-var res;
-res = f(2);
-print(res);
+print(f(3));
 }
 """
 

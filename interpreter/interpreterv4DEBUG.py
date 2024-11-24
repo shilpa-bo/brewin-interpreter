@@ -13,24 +13,29 @@ class ExecStatus(Enum):
     CONTINUE = 1
     RETURN = 2
 
-class LazyExpression:
-    def __init__(self, eval_func):
-        print("Creating lazy expression...", eval_func)
-        self.eval_func = eval_func
-        self.cached_value = None
-        self.evaluated = False
-
+# "Thunk" datatype for Lazy Evaluation:
+class Thunk:
+    def __init__(self, expr, env, eval_func):
+        self._expr = expr
+        self._env = copy.deepcopy(env)
+        self._eval_func = eval_func
+        self._evaluated = False
+        self._value = None
     def evaluate(self):
-        if not self.evaluated:
-            print("Evaluating lazy expression...")
-            result = self.eval_func()  # Call the lambda
-            print("Result from eval_func:", result)
-            self.cached_value = result
-        if isinstance(self.cached_value, LazyExpression):
-            self.cached_value = self.cached_value.evaluate()
-        self.evaluated = True
-        return self.cached_value
-    
+        if not self._evaluated:
+            # Evaluate the stored expression
+            # context is being passed in weird here?
+            self._value = self._eval_func(self._expr, self._env)
+            self._evaluated = True
+        # Keep evaluating if the result is another Thunk
+        # Don't know if this will work with nested thunks or recursion??
+        while isinstance(self._value, Thunk):
+            self._value = self._value.evaluate()
+        return self._value
+    @staticmethod
+    def isThunk(obj):
+        return isinstance(obj, Thunk)
+
 # Main interpreter class
 class Interpreter(InterpreterBase):
     # constants
@@ -42,8 +47,25 @@ class Interpreter(InterpreterBase):
     def __init__(self, console_output=True, inp=None, trace_output=False):
         super().__init__(console_output, inp)
         self.trace_output = trace_output
-        self.__setup_ops()
+        self.__setup_ops()  
 
+    def forceeval(self, value):
+        if isinstance(value, Thunk):
+            return value.evaluate()
+        return value
+    
+    def meval(self, expr, env, context="lazy"):
+        # something is off about the context
+        if context == "lazy":
+            # wrap the expression in a thunk for later evaluation
+            # go over this... a little conffused wtf
+            return Thunk(expr, env, lambda e, env: self.__eval_expr(e, context="eager"))
+        
+        elif context == "eager":
+            if isinstance(expr, Thunk):
+                return expr.evaluate()
+        return self.__evaluate_expr(expr)
+    
     # run a program that's provided in a string
     # usese the provided Parser found in brewparse.py to parse the program
     # into an abstract syntax tree (ast)
@@ -87,11 +109,11 @@ class Interpreter(InterpreterBase):
         return (ExecStatus.CONTINUE, Interpreter.NIL_VALUE)
 
     def __run_statement(self, statement):
-        print("Run statement", statement, statement.elem_type)
         status = ExecStatus.CONTINUE
         return_val = None
         if statement.elem_type == InterpreterBase.FCALL_NODE:
-            self.__call_func(statement)
+            # self.meval(statement, self.env, context="eager").evaluate()
+            self.__call_func(statement, context="eager")
         elif statement.elem_type == "=":
             self.__assign(statement)
         elif statement.elem_type == InterpreterBase.VAR_DEF_NODE:
@@ -107,12 +129,28 @@ class Interpreter(InterpreterBase):
     
     def __call_func(self, call_node, context="lazy"):
         func_name = call_node.get("name")
-        print("call func", func_name)
         actual_args = call_node.get("args")
-        print(actual_args)
-        return self.__call_func_aux(func_name, actual_args)
 
-    def __call_func_aux(self, func_name, actual_args, context="lazy"):
+        if context == "lazy":
+            # Lazily evaluate arguments by wrapping them in Thunks
+            return Thunk(
+                (func_name, actual_args),  # Store function name and arguments as a tuple
+                copy.deepcopy(self.env),  # Capture the current environment
+                lambda func_call, env: self.__call_func_aux(
+                    func_call[0],  # Function name
+                    [Thunk(arg, env, lambda e, env: self.__eval_expr(e, context="eager")) for arg in func_call[1]],  # Lazy arguments
+                    env,  # Captured environment
+                )
+            )
+
+        # Eagerly evaluate arguments if context is eager
+        evaluated_args = [self.forceeval(self.__eval_expr(arg)) for arg in actual_args]
+        return self.__call_func_aux(func_name, evaluated_args, self.env)
+
+    def __call_func_aux(self, func_name, actual_args, env= None):
+        print("Func call" , env)
+        if env is None:
+            env = self.env
         if func_name == "print":
             return self.__call_print(actual_args)
         if func_name == "inputi" or func_name == "inputs":
@@ -131,28 +169,22 @@ class Interpreter(InterpreterBase):
         for formal_ast, actual_ast in zip(formal_args, actual_args):
             result = copy.copy(self.__eval_expr(actual_ast))
             arg_name = formal_ast.get("name")
-            print("function call:", arg_name)
             args[arg_name] = result
 
         # then create the new activation record 
         self.env.push_func()
-        if "x" in args:
-            print("push func", args["x"])
         # and add the formal arguments to the activation record
         for arg_name, value in args.items():
           self.env.create(arg_name, value)
-        print("func aux",self.env.environment)
         _, return_val = self.__run_statements(func_ast.get("statements"))
-        print("return val", return_val)
         self.env.pop_func()
         return return_val
 
     def __call_print(self, args):
         output = ""
         for arg in args:
-            result = self.__eval_expr(arg, context="eager")  # result is a Value object
-            if isinstance(result, LazyExpression):
-                print("in print statement, calling evaluate")
+            result = self.meval(arg, self.env, context="eager") # need every result to be eagerly evaluated
+            if isinstance(result, Thunk):
                 result = result.evaluate()
             output = output + get_printable(result)
         super().output(output)
@@ -175,12 +207,10 @@ class Interpreter(InterpreterBase):
     def __assign(self, assign_ast):
         var_name = assign_ast.get("name")
         value_obj = self.__eval_expr(assign_ast.get("expression"))
-        print("assign", var_name, value_obj)
         if not self.env.set(var_name, value_obj):
             super().error(
                 ErrorType.NAME_ERROR, f"Undefined variable {var_name} in assignment"
             )
-    
     def __var_def(self, var_ast):
         var_name = var_ast.get("name")
         if not self.env.create(var_name, Interpreter.NIL_VALUE):
@@ -189,9 +219,9 @@ class Interpreter(InterpreterBase):
             )
 
     def __eval_expr(self, expr_ast, context="lazy"):
-        print("Eval Expr", expr_ast, expr_ast.elem_type)
-        if context == "lazy":
-            return LazyExpression(lambda: self.__eval_expr(expr_ast, context="eager"))
+        return self.meval(expr_ast, self.env, context)
+
+    def __evaluate_expr(self, expr_ast):
         if expr_ast.elem_type == InterpreterBase.NIL_NODE:
             return Interpreter.NIL_VALUE
         if expr_ast.elem_type == InterpreterBase.INT_NODE:
@@ -201,13 +231,10 @@ class Interpreter(InterpreterBase):
         if expr_ast.elem_type == InterpreterBase.BOOL_NODE:
             return Value(Type.BOOL, expr_ast.get("val"))
         if expr_ast.elem_type == InterpreterBase.VAR_NODE:
-            # here I want to return val if it is not a lazy expression, otherwise evaluate it?
-            # does this make sense?
-            # IDK
+            env = self.env.return_env().copy()
+            print(env)
             var_name = expr_ast.get("name")
             val = self.env.get(var_name)
-            print(self.env.environment)
-            print(val)
             if val is None:
                 super().error(ErrorType.NAME_ERROR, f"Variable {var_name} not found")
             return val
@@ -220,13 +247,14 @@ class Interpreter(InterpreterBase):
         if expr_ast.elem_type == Interpreter.NOT_NODE:
             return self.__eval_unary(expr_ast, Type.BOOL, lambda x: not x)
 
-    def __eval_op(self, arith_ast, context="lazy"):
-        if context == "lazy":
-            print("Eval OP")
-            return LazyExpression(lambda: self.__eval_op(arith_ast, context="eager"))
-        left_value_obj = self.__eval_expr(arith_ast.get("op1"), context="eager")
-        right_value_obj = self.__eval_expr(arith_ast.get("op2"), context="eager")
-        print(left_value_obj, right_value_obj)
+    def __eval_op(self, arith_ast):
+        left_value_obj = self.__eval_expr(arith_ast.get("op1"))
+        right_value_obj = self.__eval_expr(arith_ast.get("op2"))
+        # don't know if this is right?
+        if isinstance(left_value_obj, Thunk):
+            left_value_obj = left_value_obj.evaluate()
+        if isinstance(right_value_obj, Thunk):
+            right_value_obj = right_value_obj.evaluate()
         if not self.__compatible_types(
             arith_ast.elem_type, left_value_obj, right_value_obj
         ):
@@ -328,7 +356,12 @@ class Interpreter(InterpreterBase):
 
     def __do_if(self, if_ast):
         cond_ast = if_ast.get("condition")
-        result = self.__eval_expr(cond_ast)
+        # need to evaluate condition eagerly
+        # result = self.__eval_expr(cond_ast)
+        result = self.meval(cond_ast, self.env, context="eager")
+        if isinstance(result, Thunk):
+            result = result.evaluate()
+        
         if result.type() != Type.BOOL:
             super().error(
                 ErrorType.TYPE_ERROR,
