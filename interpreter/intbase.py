@@ -52,7 +52,6 @@ class InterpreterBase:
         self.error_type = None
         self.error_line = None
 
-    # Students must implement this in their derived class
     def run(self, program):
         pass
 
@@ -66,7 +65,7 @@ class InterpreterBase:
             return cur_input
         return None
 
-    # students must call this for any errors that they run into
+    # Call this for all errors
     def error(self, error_type, description=None, line_num=None):
         # log the error before we throw
         self.error_line = line_num

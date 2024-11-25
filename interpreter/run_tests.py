@@ -35,7 +35,6 @@ def run_1(test_file, test_name):
         print(f"Test {test_name} failed with error:")
         print(e)
 
-# Main block
 if __name__ == "__main__":
     print("Running Fails:")
     run_tests("fails")
