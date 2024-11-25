@@ -6,7 +6,7 @@ interpreter = Interpreter()
 
 # Base directory for test cases
 # Test case directories should be in a directory called "test_cases"
-base_directory = os.path.join(os.getcwd(), "test_cases_v3")
+base_directory = os.path.join(os.getcwd(), "test_cases_v4")
 
 # Function to run all tests in a specified directory
 def run_tests(test_file):
@@ -14,6 +14,7 @@ def run_tests(test_file):
     for filename in os.listdir(directory):
         file_path = os.path.join(directory, filename)
         if os.path.isfile(file_path):
+            print("")
             print(f"Processing file: {filename}")
             try:
                 with open(file_path, 'r') as file:
@@ -36,8 +37,10 @@ def run_1(test_file, test_name):
 
 # Main block
 if __name__ == "__main__":
-    print("Running Fails")
+    print("Running Fails:")
     run_tests("fails")
-
-    print("Running Tests")
+    print("")
+    print("************************************************************************************************************")
+    print("")
+    print("Running Tests:")
     run_tests("tests")

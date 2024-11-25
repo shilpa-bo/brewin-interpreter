@@ -13,6 +13,19 @@ class ExecStatus(Enum):
     CONTINUE = 1
     RETURN = 2
 
+class LazyObject:
+    def __init__(self, expr_ast, captured_env, eval_func):
+        # should i use static methods to improve encapsulation?
+        self.expr_ast = expr_ast
+        self.captured_env = copy.copy(captured_env)
+        self.eval_func = eval_func
+        self._evaluated = False
+        self._value = None
+    def evaluate(self):
+        if not self._evaluated:
+            self._value = self.eval_func(self.expr_ast, self.captured_env)
+            self._evaluated = True
+        return self._value
 
 # Main interpreter class
 class Interpreter(InterpreterBase):
@@ -87,12 +100,16 @@ class Interpreter(InterpreterBase):
 
         return (status, return_val)
     
-    def __call_func(self, call_node):
+    def __call_func(self, call_node, env=None):
+        if env is None:
+            env = self.env
         func_name = call_node.get("name")
         actual_args = call_node.get("args")
-        return self.__call_func_aux(func_name, actual_args)
+        return self.__call_func_aux(func_name, actual_args, env)
 
-    def __call_func_aux(self, func_name, actual_args):
+    def __call_func_aux(self, func_name, actual_args, env=None):
+        if env is None:
+            env = self.env
         if func_name == "print":
             return self.__call_print(actual_args)
         if func_name == "inputi" or func_name == "inputs":
@@ -109,10 +126,10 @@ class Interpreter(InterpreterBase):
         # first evaluate all of the actual parameters and associate them with the formal parameter names
         args = {}
         for formal_ast, actual_ast in zip(formal_args, actual_args):
-            result = copy.copy(self.__eval_expr(actual_ast))
+            result = copy.copy(self.__eval_expr(actual_ast, env))
             arg_name = formal_ast.get("name")
             args[arg_name] = result
-
+        
         # then create the new activation record 
         self.env.push_func()
         # and add the formal arguments to the activation record
@@ -146,7 +163,9 @@ class Interpreter(InterpreterBase):
 
     def __assign(self, assign_ast):
         var_name = assign_ast.get("name")
-        value_obj = self.__eval_expr(assign_ast.get("expression"))
+
+        # Don't want to evaluate here (lazy eval)- create a lazy obj with captured env instead
+        value_obj = LazyObject(assign_ast.get("expression"), copy.deepcopy(self.env), self.__eval_expr)
         if not self.env.set(var_name, value_obj):
             super().error(
                 ErrorType.NAME_ERROR, f"Undefined variable {var_name} in assignment"
@@ -159,7 +178,10 @@ class Interpreter(InterpreterBase):
                 ErrorType.NAME_ERROR, f"Duplicate definition for variable {var_name}"
             )
 
-    def __eval_expr(self, expr_ast):
+    def __eval_expr(self, expr_ast, env=None):
+        # DOCUMENT: Pass in captured environment if evaluating lazily, otherwise use self.env
+        if env is None:
+            env = self.env
         if expr_ast.elem_type == InterpreterBase.NIL_NODE:
             return Interpreter.NIL_VALUE
         if expr_ast.elem_type == InterpreterBase.INT_NODE:
@@ -170,22 +192,28 @@ class Interpreter(InterpreterBase):
             return Value(Type.BOOL, expr_ast.get("val"))
         if expr_ast.elem_type == InterpreterBase.VAR_NODE:
             var_name = expr_ast.get("name")
-            val = self.env.get(var_name)
+            val = env.get(var_name)
+            if isinstance(val, LazyObject):
+                val = val.evaluate()
             if val is None:
                 super().error(ErrorType.NAME_ERROR, f"Variable {var_name} not found")
             return val
         if expr_ast.elem_type == InterpreterBase.FCALL_NODE:
-            return self.__call_func(expr_ast)
+            return self.__call_func(expr_ast, env)
         if expr_ast.elem_type in Interpreter.BIN_OPS:
-            return self.__eval_op(expr_ast)
+            return self.__eval_op(expr_ast, env)
         if expr_ast.elem_type == Interpreter.NEG_NODE:
-            return self.__eval_unary(expr_ast, Type.INT, lambda x: -1 * x)
+            return self.__eval_unary(expr_ast, Type.INT, lambda x: -1 * x, env)
         if expr_ast.elem_type == Interpreter.NOT_NODE:
-            return self.__eval_unary(expr_ast, Type.BOOL, lambda x: not x)
+            return self.__eval_unary(expr_ast, Type.BOOL, lambda x: not x, env)
 
-    def __eval_op(self, arith_ast):
-        left_value_obj = self.__eval_expr(arith_ast.get("op1"))
-        right_value_obj = self.__eval_expr(arith_ast.get("op2"))
+    def __eval_op(self, arith_ast, env=None):
+        if env is None:
+            env = self.env
+        left_value_obj = self.__eval_expr(arith_ast.get("op1"), env)
+        if arith_ast.elem_type in ["&&", "||"]:
+            return self.__short_circuit(arith_ast.elem_type, left_value_obj, arith_ast.get("op2"), env)
+        right_value_obj = self.__eval_expr(arith_ast.get("op2"), env)
         if not self.__compatible_types(
             arith_ast.elem_type, left_value_obj, right_value_obj
         ):
@@ -207,8 +235,10 @@ class Interpreter(InterpreterBase):
             return True
         return obj1.type() == obj2.type()
 
-    def __eval_unary(self, arith_ast, t, f):
-        value_obj = self.__eval_expr(arith_ast.get("op1"))
+    def __eval_unary(self, arith_ast, t, f, env=None):
+        if env is None:
+            env = self.env
+        value_obj = self.__eval_expr(arith_ast.get("op1"), env)
         if value_obj.type() != t:
             super().error(
                 ErrorType.TYPE_ERROR,
@@ -264,7 +294,8 @@ class Interpreter(InterpreterBase):
         #  set up operations on bools
         self.op_to_lambda[Type.BOOL] = {}
         self.op_to_lambda[Type.BOOL]["&&"] = lambda x, y: Value(
-            x.type(), x.value() and y.value()
+            x.type(), 
+            x.value() and y.value()
         )
         self.op_to_lambda[Type.BOOL]["||"] = lambda x, y: Value(
             x.type(), x.value() or y.value()
@@ -284,6 +315,19 @@ class Interpreter(InterpreterBase):
         self.op_to_lambda[Type.NIL]["!="] = lambda x, y: Value(
             Type.BOOL, x.type() != y.type() or x.value() != y.value()
         )
+    
+    def __short_circuit(self, op, left_value_obj, right_expr_ast, env):
+        if op == "&&":
+            if not left_value_obj.value():  # if False, no need to evaluate the right operand
+                return Value(Type.BOOL, False)
+        elif op == "||":
+            if left_value_obj.value():  # if True, no need to evaluate the right operand
+                return Value(Type.BOOL, True)
+        # Otherwise evaluate normally
+        right_value_obj = self.__eval_expr(right_expr_ast, env)
+        f = self.op_to_lambda[left_value_obj.type()][op]
+        return f(left_value_obj, right_value_obj)
+
 
     def __do_if(self, if_ast):
         cond_ast = if_ast.get("condition")

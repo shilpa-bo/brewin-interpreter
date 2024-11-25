@@ -1,0 +1,46 @@
+func f(x){
+print("Probably me");
+return x;
+}
+func g(x){
+print("I am third");
+return x;
+}
+func h(x){
+print("How does this go");
+return x;
+}
+func k(some_string){
+print("I will print a few times");
+return some_string;
+}
+func comma(){
+print("I should only print once, but i am second");
+var y;
+y = k(",") + " ";
+return y;
+}
+func main(){
+var f;
+var g;
+var h;
+var delim;
+var yay;
+f = f("First is the worst");
+g = g("Second is the best");
+h = h("Third is the one with the treasure chest");
+delim = comma();
+yay = k(k("!"));
+print(f, delim, g, delim, h, yay);
+}
+
+/*OUT
+Probably me
+I should only print once, but i am second
+I will print a few times
+I am third
+How does this go
+I will print a few times
+I will print a few times
+First is the worst, Second is the best, Third is the one with the treasure chest!
+*/

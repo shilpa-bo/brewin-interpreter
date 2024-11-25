@@ -6,11 +6,13 @@ from parser.brewparse import parse_program
 program = """
 func main() {
   var x;
-  x = f(3);
-  }
+  var res;
+  x = 2;
+  res = f(x) * 2;
+  print(res);
+    }
 
 func f(x) {
-  print("in f(x)");
   return 2*x;
 }
 

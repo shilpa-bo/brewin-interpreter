@@ -1,0 +1,18 @@
+func f(x){
+    print("func f");
+    return x;
+}
+func main(){
+    var x;
+    for(x = 1; f(x) < 3; x = x+1){
+    print(x);
+    }
+}
+
+/*OUT
+func f
+1
+func f
+2
+func f
+*/

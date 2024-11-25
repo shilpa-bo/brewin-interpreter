@@ -10,12 +10,21 @@ print(x);
 }
 """
 program4 = """
-func f(x){
-return 2*x;
+func f(){
+print("i will go");
+return false;
 }
 
-func main() {
-print(f(3));
+func g(){
+print("i wont go");
+return true;
+}
+
+func main(){
+var x;
+x = f() && g();
+print("short circuit");
+print(x);
 }
 """
 
