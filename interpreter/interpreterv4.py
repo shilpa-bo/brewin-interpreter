@@ -15,17 +15,16 @@ class ExecStatus(Enum):
 
 class LazyObject:
     def __init__(self, expr_ast, captured_env, eval_func):
-        # should i use static methods to improve encapsulation?
-        self.expr_ast = expr_ast
-        self.captured_env = copy.copy(captured_env)
-        self.eval_func = eval_func
-        self._evaluated = False
-        self._value = None
+        self.__expr_ast = expr_ast
+        self.__captured_env = copy.copy(captured_env)
+        self.__eval_func = eval_func
+        self.__evaluated = False
+        self.__value = None
     def evaluate(self):
-        if not self._evaluated:
-            self._value = self.eval_func(self.expr_ast, self.captured_env)
-            self._evaluated = True
-        return self._value
+        if not self.__evaluated:
+            self.__value = self.__eval_func(self.__expr_ast, self.__captured_env)
+            self.__evaluated = True
+        return self.__value
 
 # Main interpreter class
 class Interpreter(InterpreterBase):
