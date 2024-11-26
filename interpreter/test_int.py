@@ -14,24 +14,22 @@ func main() {
 }
 """
 program4 = """
-func f(x) {
-  print("f is running");
-  var y;
-  y = 2 * x;
-  return y;
+func error_function() {
+  raise "error";
+  print("after raise");
+  return 0;
 }
 
 func main() {
-  var x; 
-  var result;
-  x = f(3);
-  result = x + 10;
-  print(x);
-  x = 4;
-  print(x);
-  print(result);
+  var x;
+  x = error_function() + 10;
+  try {
+    print(x); 
+  }
+  catch "error" {
+    print("Caught an error during evaluation of x");
+  }
 }
-
 """
 
 n = input("Enter D for Debug, N for Normal: ")

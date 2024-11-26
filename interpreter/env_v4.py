@@ -11,7 +11,6 @@ class EnvironmentManager:
             [{key: value for key, value in scope.items()} for scope in stack] for stack in self.environment
         ]
         return copied_env
-    
     # DOCUMENT: Weird List comprehension:
     # Dictionary Comprehension: {key: value for key, value in scope.items()}
         # Creating a new dictionary with new key that reference to the same values objects (shallow copied dictionaries)

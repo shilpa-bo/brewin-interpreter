@@ -5,15 +5,17 @@ from parser.brewparse import parse_program
 
 program = """
 func main() {
+  try{
+    
+    raise "x";
+  }
+  catch "x"{
+    print("in catch x");
+  }
+  catch "i catch i catch i catch"{
+    print("in catch y");
+  }
   var x;
-  var res;
-  x = 2;
-  res = f(x) * 2;
-  print(res);
-    }
-
-func f(x) {
-  return 2*x;
 }
 
 """
@@ -26,6 +28,12 @@ for func in ast.get('functions'):
     print(f"Current Function: {func.get('name')}")
     for statement in func.get('statements'):
         print(statement)
+        if statement.elem_type == 'try':
+            for try_statement in statement.get('statements'):
+                print(try_statement)
+            for catcher in (statement.get('catchers')):
+                print(catcher)
+            
 
 # # for func in ast.get('functions'):
 # #     if func.get('name') == 'main':

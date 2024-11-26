@@ -12,21 +12,21 @@ from type_v4 import Type, Value, create_value, get_printable
 class ExecStatus(Enum):
     CONTINUE = 1
     RETURN = 2
+    RAISE = 3
 
 class LazyObject:
     def __init__(self, expr_ast, captured_env, eval_func):
-        # should i use static methods to improve encapsulation?
-        self.expr_ast = expr_ast
-        self.captured_env = copy.copy(captured_env)
-        self.eval_func = eval_func
-        self._evaluated = False
-        self._value = None
-        print("In LazyObject constructor", self.expr_ast, self.captured_env.environment)
+        self.__expr_ast = expr_ast
+        self.__captured_env = copy.copy(captured_env)
+        self.__eval_func = eval_func
+        self.__evaluated = False
+        self.__value = None
     def evaluate(self):
-        if not self._evaluated:
-            self._value = self.eval_func(self.expr_ast, self.captured_env)
-            self._evaluated = True
-        return self._value
+        if not self.__evaluated:
+            print(f"Evaluating {self.__expr_ast}")
+            self.__value = self.__eval_func(self.__expr_ast, self.__captured_env)
+            self.__evaluated = True
+        return self.__value
 
 # Main interpreter class
 class Interpreter(InterpreterBase):
@@ -41,9 +41,6 @@ class Interpreter(InterpreterBase):
         self.trace_output = trace_output
         self.__setup_ops()
 
-    # run a program that's provided in a string
-    # usese the provided Parser found in brewparse.py to parse the program
-    # into an abstract syntax tree (ast)
     def run(self, program):
         ast = parse_program(program)
         self.__set_up_function_table(ast)
@@ -71,32 +68,24 @@ class Interpreter(InterpreterBase):
         return candidate_funcs[num_params]
 
     def __run_statements(self, statements):
-        print("In run statements", self.env.environment)
         self.env.push_block()
         for statement in statements:
             if self.trace_output:
                 print(statement)
+            print(statement)
             status, return_val = self.__run_statement(statement)
-            if status == ExecStatus.RETURN:
-                self.env.pop_block()
+            if status in [ExecStatus.RETURN, ExecStatus.RAISE]:
+                print("now i go in here")
+                self.env.pop_block()  # Pop the block before returning
                 return (status, return_val)
-        
-        self.env.pop_block()
-        print("Popped", self.env.environment)
-        try:
-            print("After pop block", self.env.environment[0][1])
-            lazy = self.env.environment[0][1]["y"]
-            print(lazy.captured_env.environment)
-        except:
-            pass
+        self.env.pop_block()  # Pop the block when all statements run successfully
         return (ExecStatus.CONTINUE, Interpreter.NIL_VALUE)
 
     def __run_statement(self, statement):
-        print(statement)
         status = ExecStatus.CONTINUE
         return_val = None
         if statement.elem_type == InterpreterBase.FCALL_NODE:
-            self.__call_func(statement)
+            status, return_val = self.__call_func(statement)
         elif statement.elem_type == "=":
             self.__assign(statement)
         elif statement.elem_type == InterpreterBase.VAR_DEF_NODE:
@@ -107,9 +96,16 @@ class Interpreter(InterpreterBase):
             status, return_val = self.__do_if(statement)
         elif statement.elem_type == Interpreter.FOR_NODE:
             status, return_val = self.__do_for(statement)
-
+        elif statement.elem_type == Interpreter.TRY_NODE:
+            print("doing a try node")
+            status, return_val = self.__do_try(statement)
+            print("in the try block", status)
+        elif statement.elem_type == Interpreter.RAISE_NODE:
+            status, return_val = self.__do_raise(statement)
+            print("doing a raise node", return_val)
+        print("run statements", statement,status, return_val)
         return (status, return_val)
-
+    
     def __call_func(self, call_node, env=None):
         if env is None:
             env = self.env
@@ -118,6 +114,7 @@ class Interpreter(InterpreterBase):
         return self.__call_func_aux(func_name, actual_args, env)
 
     def __call_func_aux(self, func_name, actual_args, env=None):
+        print("in func aux", func_name)
         if env is None:
             env = self.env
         if func_name == "print":
@@ -136,24 +133,36 @@ class Interpreter(InterpreterBase):
         # first evaluate all of the actual parameters and associate them with the formal parameter names
         args = {}
         for formal_ast, actual_ast in zip(formal_args, actual_args):
-            # the current environment is being passed in that is what is wrong
-            # we need the captrued function environment to be passed in
-            result = copy.copy(self.__eval_expr(actual_ast, env)) # something is going wrong here
+            result = copy.copy(self.__eval_expr(actual_ast, env))
             arg_name = formal_ast.get("name")
             args[arg_name] = result
-        # then create the new activation record
+        
+        # then create the new activation record 
         self.env.push_func()
         # and add the formal arguments to the activation record
         for arg_name, value in args.items():
           self.env.create(arg_name, value)
-        _, return_val = self.__run_statements(func_ast.get("statements"))
+        status, return_val = self.__run_statements(func_ast.get("statements"))
         self.env.pop_func()
+
+        print("in func aux after running statements", func_name, status, return_val)
+
+        # must propage the raise up
+        if status == ExecStatus.RAISE:
+            return (status, return_val)
+
+
         return return_val
 
     def __call_print(self, args):
         output = ""
         for arg in args:
+            print("calling print", arg)
             result = self.__eval_expr(arg)  # result is a Value object
+            print("RESULTTT", result)
+            if isinstance(result, tuple) and result[0] == ExecStatus.RAISE:
+                print("i am in print", result)
+                return result
             output = output + get_printable(result)
         super().output(output)
         return Interpreter.NIL_VALUE
@@ -174,14 +183,14 @@ class Interpreter(InterpreterBase):
 
     def __assign(self, assign_ast):
         var_name = assign_ast.get("name")
-        # don't want to evaluate here- create a lazy obj with captured env instead
-        value_obj = LazyObject(assign_ast.get("expression"), copy.copy(self.env), self.__eval_expr)
-        # value_obj = self.__eval_expr(assign_ast.get("expression"))
+
+        # Don't want to evaluate here (lazy eval)- create a lazy obj with captured env instead
+        value_obj = LazyObject(assign_ast.get("expression"), self.env.custom_copy(), self.__eval_expr)
         if not self.env.set(var_name, value_obj):
             super().error(
                 ErrorType.NAME_ERROR, f"Undefined variable {var_name} in assignment"
             )
-
+    
     def __var_def(self, var_ast):
         var_name = var_ast.get("name")
         if not self.env.create(var_name, Interpreter.NIL_VALUE):
@@ -190,6 +199,7 @@ class Interpreter(InterpreterBase):
             )
 
     def __eval_expr(self, expr_ast, env=None):
+        # DOCUMENT: Pass in captured environment if evaluating lazily, otherwise use self.env
         if env is None:
             env = self.env
         if expr_ast.elem_type == InterpreterBase.NIL_NODE:
@@ -202,9 +212,7 @@ class Interpreter(InterpreterBase):
             return Value(Type.BOOL, expr_ast.get("val"))
         if expr_ast.elem_type == InterpreterBase.VAR_NODE:
             var_name = expr_ast.get("name")
-            # using the wrong environment!!!!!!!!
-            # need to use captured environement
-            # do i need to pass in an environment to function??
+            print(f"I am getting the value of {var_name}")
             val = env.get(var_name)
             if isinstance(val, LazyObject):
                 val = val.evaluate()
@@ -221,13 +229,30 @@ class Interpreter(InterpreterBase):
             return self.__eval_unary(expr_ast, Type.BOOL, lambda x: not x, env)
 
     def __eval_op(self, arith_ast, env=None):
+        print("Now I go into eval op")
+        # how do i propagate this up everywhere????
         if env is None:
             env = self.env
         left_value_obj = self.__eval_expr(arith_ast.get("op1"), env)
-
+        print(left_value_obj)
         if arith_ast.elem_type in ["&&", "||"]:
             return self.__short_circuit(arith_ast.elem_type, left_value_obj, arith_ast.get("op2"), env)
         right_value_obj = self.__eval_expr(arith_ast.get("op2"), env)
+
+        print("done evaluating both")
+        try:
+            status = left_value_obj[0]
+            if status == ExecStatus.RAISE:
+                return left_value_obj
+        except:
+            pass
+        try:
+            status = right_value_obj[0]
+            if status == ExecStatus.RAISE:
+                return right_value_obj
+        except:
+            pass
+
         if not self.__compatible_types(
             arith_ast.elem_type, left_value_obj, right_value_obj
         ):
@@ -307,10 +332,13 @@ class Interpreter(InterpreterBase):
         )
         #  set up operations on bools
         self.op_to_lambda[Type.BOOL] = {}
-        self.op_to_lambda[Type.BOOL]["&&"] = None
-
-        self.op_to_lambda[Type.BOOL]["||"] = None
-
+        self.op_to_lambda[Type.BOOL]["&&"] = lambda x, y: Value(
+            x.type(), 
+            x.value() and y.value()
+        )
+        self.op_to_lambda[Type.BOOL]["||"] = lambda x, y: Value(
+            x.type(), x.value() or y.value()
+        )
         self.op_to_lambda[Type.BOOL]["=="] = lambda x, y: Value(
             Type.BOOL, x.type() == y.type() and x.value() == y.value()
         )
@@ -326,6 +354,7 @@ class Interpreter(InterpreterBase):
         self.op_to_lambda[Type.NIL]["!="] = lambda x, y: Value(
             Type.BOOL, x.type() != y.type() or x.value() != y.value()
         )
+    
     def __short_circuit(self, op, left_value_obj, right_expr_ast, env):
         if op == "&&":
             if not left_value_obj.value():  # if False, no need to evaluate the right operand
@@ -333,8 +362,11 @@ class Interpreter(InterpreterBase):
         elif op == "||":
             if left_value_obj.value():  # if True, no need to evaluate the right operand
                 return Value(Type.BOOL, True)
+        # Otherwise evaluate normally
         right_value_obj = self.__eval_expr(right_expr_ast, env)
-        return Value(Type.BOOL, left_value_obj.value() and right_value_obj.value() if op == "&&" else left_value_obj.value() or right_value_obj.value())
+        f = self.op_to_lambda[left_value_obj.type()][op]
+        return f(left_value_obj, right_value_obj)
+
 
     def __do_if(self, if_ast):
         cond_ast = if_ast.get("condition")
@@ -357,9 +389,9 @@ class Interpreter(InterpreterBase):
         return (ExecStatus.CONTINUE, Interpreter.NIL_VALUE)
 
     def __do_for(self, for_ast):
-        init_ast = for_ast.get("init")
+        init_ast = for_ast.get("init") 
         cond_ast = for_ast.get("condition")
-        update_ast = for_ast.get("update")
+        update_ast = for_ast.get("update") 
 
         self.__run_statement(init_ast)  # initialize counter variable
         run_for = Interpreter.TRUE_VALUE
@@ -373,15 +405,53 @@ class Interpreter(InterpreterBase):
             if run_for.value():
                 statements = for_ast.get("statements")
                 status, return_val = self.__run_statements(statements)
-                if status == ExecStatus.RETURN:
+                if status in [ExecStatus.RETURN, ExecStatus.RAISE]:
                     return status, return_val
                 self.__run_statement(update_ast)  # update counter variable
 
         return (ExecStatus.CONTINUE, Interpreter.NIL_VALUE)
+    
 
+    def __do_try(self, try_ast):
+        statements = try_ast.get("statements")
+        print("in the Try block")
+        # i need this to return back here
+        status, return_val = self.__run_statements(statements)
+        print("Back in Try?")
+        print(status, return_val)
+        if status == ExecStatus.RAISE:
+            catchers = try_ast.get("catchers")
+            catcher_found = False
+            for catcher in catchers:
+                if catcher.get("exception_type") == return_val.value():
+                    # have to run statements of the catcher now
+                    catcher_found = True
+                    statements = catcher.get("statements")
+                    status, return_val = self.__run_statements(statements)
+                    break
+            if not catcher_found:
+                super().error(
+                    ErrorType.FAULT_ERROR, "Uncaught exception"
+                )
+            print("raise status, must run catchers")
+        return (status, return_val)
+    
     def __do_return(self, return_ast):
         expr_ast = return_ast.get("expression")
         if expr_ast is None:
             return (ExecStatus.RETURN, Interpreter.NIL_VALUE)
-        value_obj = copy.copy(self.__eval_expr(expr_ast))
+        value_obj = copy.copy(self.__eval_expr(expr_ast)) # why do i do this?
         return (ExecStatus.RETURN, value_obj)
+    
+    def __do_raise(self, raise_ast):
+        expr_ast = raise_ast.get("exception_type")
+        value_obj = self.__eval_expr(expr_ast)
+        print("In Raise")
+        # need to eagerly evaluate the exception_type
+        print("Expr ast", value_obj.value())
+        if value_obj.type() != Type.STRING:
+            super().error(
+                ErrorType.TYPE_ERROR,
+                "Incompatible type for raise exception type",
+            )
+        return (ExecStatus.RAISE, value_obj)

@@ -25,7 +25,8 @@ def run_tests(test_file):
                 print(f"Test {filename} failed with error: {e}")
 
 # Function to run a single test file by specifying the subdirectory and filename
-def run_1(test_file, test_name):
+def run_single_test(test_file="tests"):
+    test_name = input("Enter the file name: ")
     file_name = os.path.join(base_directory, test_file, test_name)
     try:
         with open(file_name, 'r') as file:
@@ -43,4 +44,4 @@ if __name__ == "__main__":
     # print("")
     # print("Running Tests:")
     # run_tests("tests")
-    run_1("tests", "lazy5.br")
+    run_single_test("tests")

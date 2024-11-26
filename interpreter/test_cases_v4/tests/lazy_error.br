@@ -1,0 +1,11 @@
+func main(){
+    var y;
+    y = x;
+    print("hello, no error");
+    print(y);
+}
+
+/*OUT
+hello, no error
+NAME_ERROR
+*/

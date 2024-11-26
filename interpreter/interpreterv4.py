@@ -12,6 +12,7 @@ from type_v4 import Type, Value, create_value, get_printable
 class ExecStatus(Enum):
     CONTINUE = 1
     RETURN = 2
+    RAISE = 3
 
 class LazyObject:
     def __init__(self, expr_ast, captured_env, eval_func):
@@ -74,7 +75,11 @@ class Interpreter(InterpreterBase):
             if status == ExecStatus.RETURN:
                 self.env.pop_block()
                 return (status, return_val)
-
+            if status == ExecStatus.RAISE:
+                self.env.pop_block()
+                # look through catchers to see if there is a match
+                # need to run_statement on catchers
+                return (status, return_val)
         self.env.pop_block()
         return (ExecStatus.CONTINUE, Interpreter.NIL_VALUE)
 
@@ -93,7 +98,10 @@ class Interpreter(InterpreterBase):
             status, return_val = self.__do_if(statement)
         elif statement.elem_type == Interpreter.FOR_NODE:
             status, return_val = self.__do_for(statement)
-
+        elif statement.elem_type == Interpreter.TRY_NODE:
+            status, return_val = self.__do_try(statement)
+        elif statement.elem_type == Interpreter.RAISE_NODE:
+            status, return_val = self.__do_raise(statement)
         return (status, return_val)
     
     def __call_func(self, call_node, env=None):
@@ -159,7 +167,6 @@ class Interpreter(InterpreterBase):
 
     def __assign(self, assign_ast):
         var_name = assign_ast.get("name")
-
         # Don't want to evaluate here (lazy eval)- create a lazy obj with captured env instead
         value_obj = LazyObject(assign_ast.get("expression"), self.env.custom_copy(), self.__eval_expr)
         if not self.env.set(var_name, value_obj):
@@ -367,10 +374,40 @@ class Interpreter(InterpreterBase):
                 self.__run_statement(update_ast)  # update counter variable
 
         return (ExecStatus.CONTINUE, Interpreter.NIL_VALUE)
+    
 
+    def __do_try(self, try_ast):
+        statements = try_ast.get("statements")
+        status, return_val = self.__run_statements(statements)
+        if status == ExecStatus.RAISE:
+            catchers = try_ast.get("catchers")
+            catcher_found = False
+            for catcher in catchers:
+                if catcher.get("exception_type") == return_val.value():
+                    # have to run statements of the catcher now
+                    catcher_found = True
+                    statements = catcher.get("statements")
+                    status, return_val = self.__run_statements(statements)
+            if not catcher_found:
+                super().error(
+                    ErrorType.FAULT_ERROR, "Uncaught exception"
+                )
+        return (status, return_val)
+    
     def __do_return(self, return_ast):
         expr_ast = return_ast.get("expression")
         if expr_ast is None:
             return (ExecStatus.RETURN, Interpreter.NIL_VALUE)
-        value_obj = copy.copy(self.__eval_expr(expr_ast))
+        value_obj = copy.copy(self.__eval_expr(expr_ast)) # why do i do this?
         return (ExecStatus.RETURN, value_obj)
+    
+    def __do_raise(self, raise_ast):
+        expr_ast = raise_ast.get("exception_type")
+        value_obj = self.__eval_expr(expr_ast)
+        # need to eagerly evaluate the exception_type
+        if value_obj.type() != Type.STRING:
+            super().error(
+                ErrorType.TYPE_ERROR,
+                "Incompatible type for raise exception type",
+            )
+        return (ExecStatus.RAISE, value_obj)
