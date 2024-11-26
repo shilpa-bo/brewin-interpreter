@@ -3,6 +3,22 @@
 class EnvironmentManager:
     def __init__(self):
         self.environment = []
+    
+    def custom_copy(self):
+        # DOCUMENT: Deep copy outer structure but keep references for inner scopes
+        copied_env = EnvironmentManager() # create new environment (outer)
+        copied_env.environment = [
+            [{key: value for key, value in scope.items()} for scope in stack] for stack in self.environment
+        ]
+        return copied_env
+    
+    # DOCUMENT: Weird List comprehension:
+    # Dictionary Comprehension: {key: value for key, value in scope.items()}
+        # Creating a new dictionary with new key that reference to the same values objects (shallow copied dictionaries)
+    # Inner List Comprehension: [{key: value for key, value in scope.items()} for scope in stack]
+        # New list of shallow copied dictionaries for each stack
+    # Outer List Comprehension:
+        # New list of stacks which hold ^
 
     # returns a VariableDef object
     def get(self, symbol):

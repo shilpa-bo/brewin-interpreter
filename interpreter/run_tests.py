@@ -36,10 +36,11 @@ def run_1(test_file, test_name):
         print(e)
 
 if __name__ == "__main__":
-    print("Running Fails:")
-    run_tests("fails")
-    print("")
-    print("************************************************************************************************************")
-    print("")
-    print("Running Tests:")
-    run_tests("tests")
+    # print("Running Fails:")
+    # run_tests("fails")
+    # print("")
+    # print("************************************************************************************************************")
+    # print("")
+    # print("Running Tests:")
+    # run_tests("tests")
+    run_1("tests", "lazy5.br")

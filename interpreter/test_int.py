@@ -2,30 +2,36 @@ from interpreterv4 import Interpreter
 from interpreterv4DEBUG import Interpreter as DEBUGInterpreter
 program3 = """
 
-func main(){
-var x;
-x = "hi";
-print(x);
-print(x);
+func main() {
+    print("hello");
+    var y;
+    if (y==nil){
+        var x;
+        x = 5;
+        y = 7 + x;
+    }
+    print(y);
 }
 """
 program4 = """
-func f(){
-print("i will go");
-return false;
+func f(x) {
+  print("f is running");
+  var y;
+  y = 2 * x;
+  return y;
 }
 
-func g(){
-print("i wont go");
-return true;
+func main() {
+  var x; 
+  var result;
+  x = f(3);
+  result = x + 10;
+  print(x);
+  x = 4;
+  print(x);
+  print(result);
 }
 
-func main(){
-var x;
-x = f() && g();
-print("short circuit");
-print(x);
-}
 """
 
 n = input("Enter D for Debug, N for Normal: ")

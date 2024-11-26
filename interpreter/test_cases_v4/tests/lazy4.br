@@ -1,0 +1,16 @@
+func somefxn(x){
+    var y;
+    y = 10;
+    x = 8 + y;
+    return x;
+}
+func main(){
+    print("hello world");
+    var y;
+    if (true){
+        var x;
+        x = 5;
+        y = somefxn(6);
+    }
+    print(y);
+}

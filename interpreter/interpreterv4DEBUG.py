@@ -21,6 +21,7 @@ class LazyObject:
         self.eval_func = eval_func
         self._evaluated = False
         self._value = None
+        print("In LazyObject constructor", self.expr_ast, self.captured_env.environment)
     def evaluate(self):
         if not self._evaluated:
             self._value = self.eval_func(self.expr_ast, self.captured_env)
@@ -70,6 +71,7 @@ class Interpreter(InterpreterBase):
         return candidate_funcs[num_params]
 
     def __run_statements(self, statements):
+        print("In run statements", self.env.environment)
         self.env.push_block()
         for statement in statements:
             if self.trace_output:
@@ -78,11 +80,19 @@ class Interpreter(InterpreterBase):
             if status == ExecStatus.RETURN:
                 self.env.pop_block()
                 return (status, return_val)
-
+        
         self.env.pop_block()
+        print("Popped", self.env.environment)
+        try:
+            print("After pop block", self.env.environment[0][1])
+            lazy = self.env.environment[0][1]["y"]
+            print(lazy.captured_env.environment)
+        except:
+            pass
         return (ExecStatus.CONTINUE, Interpreter.NIL_VALUE)
 
     def __run_statement(self, statement):
+        print(statement)
         status = ExecStatus.CONTINUE
         return_val = None
         if statement.elem_type == InterpreterBase.FCALL_NODE:
@@ -99,7 +109,7 @@ class Interpreter(InterpreterBase):
             status, return_val = self.__do_for(statement)
 
         return (status, return_val)
-    
+
     def __call_func(self, call_node, env=None):
         if env is None:
             env = self.env
@@ -131,7 +141,7 @@ class Interpreter(InterpreterBase):
             result = copy.copy(self.__eval_expr(actual_ast, env)) # something is going wrong here
             arg_name = formal_ast.get("name")
             args[arg_name] = result
-        # then create the new activation record 
+        # then create the new activation record
         self.env.push_func()
         # and add the formal arguments to the activation record
         for arg_name, value in args.items():
@@ -165,13 +175,13 @@ class Interpreter(InterpreterBase):
     def __assign(self, assign_ast):
         var_name = assign_ast.get("name")
         # don't want to evaluate here- create a lazy obj with captured env instead
-        value_obj = LazyObject(assign_ast.get("expression"), copy.deepcopy(self.env), self.__eval_expr)
+        value_obj = LazyObject(assign_ast.get("expression"), copy.copy(self.env), self.__eval_expr)
         # value_obj = self.__eval_expr(assign_ast.get("expression"))
         if not self.env.set(var_name, value_obj):
             super().error(
                 ErrorType.NAME_ERROR, f"Undefined variable {var_name} in assignment"
             )
-    
+
     def __var_def(self, var_ast):
         var_name = var_ast.get("name")
         if not self.env.create(var_name, Interpreter.NIL_VALUE):
@@ -193,7 +203,7 @@ class Interpreter(InterpreterBase):
         if expr_ast.elem_type == InterpreterBase.VAR_NODE:
             var_name = expr_ast.get("name")
             # using the wrong environment!!!!!!!!
-            # need to use captured environement 
+            # need to use captured environement
             # do i need to pass in an environment to function??
             val = env.get(var_name)
             if isinstance(val, LazyObject):
@@ -347,9 +357,9 @@ class Interpreter(InterpreterBase):
         return (ExecStatus.CONTINUE, Interpreter.NIL_VALUE)
 
     def __do_for(self, for_ast):
-        init_ast = for_ast.get("init") 
+        init_ast = for_ast.get("init")
         cond_ast = for_ast.get("condition")
-        update_ast = for_ast.get("update") 
+        update_ast = for_ast.get("update")
 
         self.__run_statement(init_ast)  # initialize counter variable
         run_for = Interpreter.TRUE_VALUE

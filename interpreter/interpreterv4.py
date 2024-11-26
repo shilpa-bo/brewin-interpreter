@@ -39,9 +39,6 @@ class Interpreter(InterpreterBase):
         self.trace_output = trace_output
         self.__setup_ops()
 
-    # run a program that's provided in a string
-    # usese the provided Parser found in brewparse.py to parse the program
-    # into an abstract syntax tree (ast)
     def run(self, program):
         ast = parse_program(program)
         self.__set_up_function_table(ast)
@@ -164,7 +161,7 @@ class Interpreter(InterpreterBase):
         var_name = assign_ast.get("name")
 
         # Don't want to evaluate here (lazy eval)- create a lazy obj with captured env instead
-        value_obj = LazyObject(assign_ast.get("expression"), copy.deepcopy(self.env), self.__eval_expr)
+        value_obj = LazyObject(assign_ast.get("expression"), self.env.custom_copy(), self.__eval_expr)
         if not self.env.set(var_name, value_obj):
             super().error(
                 ErrorType.NAME_ERROR, f"Undefined variable {var_name} in assignment"
