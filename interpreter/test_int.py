@@ -14,24 +14,33 @@ func main() {
 }
 """
 program4 = """
-func error_function() {
-  raise "error";
-  print("after raise");
-  return 0;
+func t() {
+ print("t");
+ return true;
+}
+
+func f() {
+ print("f");
+ return false;
 }
 
 func main() {
-  var x;
-  x = error_function() + 10;
-  try {
-    print(x); 
-  }
-  catch "error" {
-    print("Caught an error during evaluation of x");
-  }
+  print(t() || f());
+  print("---");
+  print(f() || t()); 
 }
-"""
 
+/*
+*OUT*
+t
+true
+---
+f
+t
+true
+*OUT*
+*/
+"""
 n = input("Enter D for Debug, N for Normal: ")
 if n.upper() == "D":
   debug_int = DEBUGInterpreter()

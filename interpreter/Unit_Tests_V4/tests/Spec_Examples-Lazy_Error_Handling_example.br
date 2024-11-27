@@ -5,15 +5,19 @@ func error_function() {
 
 func main() {
   var x;
-  x = error_function() + 10;
+  x = error_function() + 10;  /* Exception occurs when x is evaluated */
+  print("Before x is evaluated");
   try {
-    print(x); 
+    print(x);  /* Evaluation of x happens here */
   }
   catch "error" {
     print("Caught an error during evaluation of x");
   }
 }
 
-/*OUT
+/*
+*OUT*
+Before x is evaluated
 Caught an error during evaluation of x
+*OUT*
 */

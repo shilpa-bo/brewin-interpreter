@@ -1,0 +1,16 @@
+func main(){
+    var x;
+    x = 9;
+    try{
+        print("will be a type error");
+        raise x;
+    }
+    catch "x"{
+        print("catch");
+    }
+}
+/*OUT
+will be a type error
+ErrorType.TYPE_ERROR
+*/
+

@@ -16,17 +16,24 @@ class ExecStatus(Enum):
 
 class LazyObject:
     def __init__(self, expr_ast, captured_env, eval_func):
-        self.__expr_ast = expr_ast
-        self.__captured_env = copy.copy(captured_env)
-        self.__eval_func = eval_func
-        self.__evaluated = False
-        self.__value = None
+        self.expr_ast = expr_ast
+        self.captured_env = captured_env
+        self.eval_func = eval_func
+        self._evaluated = False
+        self._value = None
+
     def evaluate(self):
-        if not self.__evaluated:
-            print(f"Evaluating {self.__expr_ast}")
-            self.__value = self.__eval_func(self.__expr_ast, self.__captured_env)
-            self.__evaluated = True
-        return self.__value
+        if not self._evaluated:
+            self._value = self.eval_func(self.expr_ast, self.captured_env)
+            self._evaluated = True
+        return self._value
+
+    def value(self):
+        return self.evaluate().value()
+
+    def type(self):
+        return self.evaluate().type()
+
 
 # Main interpreter class
 class Interpreter(InterpreterBase):
@@ -34,6 +41,7 @@ class Interpreter(InterpreterBase):
     NIL_VALUE = create_value(InterpreterBase.NIL_DEF)
     TRUE_VALUE = create_value(InterpreterBase.TRUE_DEF)
     BIN_OPS = {"+", "-", "*", "/", "==", "!=", ">", ">=", "<", "<=", "||", "&&"}
+    TRY_STACK = 0
 
     # methods
     def __init__(self, console_output=True, inp=None, trace_output=False):
@@ -72,20 +80,25 @@ class Interpreter(InterpreterBase):
         for statement in statements:
             if self.trace_output:
                 print(statement)
-            print(statement)
             status, return_val = self.__run_statement(statement)
-            if status in [ExecStatus.RETURN, ExecStatus.RAISE]:
-                print("now i go in here")
-                self.env.pop_block()  # Pop the block before returning
+            if status == ExecStatus.RETURN:
+                self.env.pop_block()
                 return (status, return_val)
-        self.env.pop_block()  # Pop the block when all statements run successfully
+            if status == ExecStatus.RAISE:
+                self.env.pop_block()
+                # look through catchers to see if there is a match
+                # need to run_statement on catchers
+                return (status, return_val)
+        self.env.pop_block()
         return (ExecStatus.CONTINUE, Interpreter.NIL_VALUE)
 
-    def __run_statement(self, statement):
+    def __run_statement(self, statement, env=None):
         status = ExecStatus.CONTINUE
         return_val = None
         if statement.elem_type == InterpreterBase.FCALL_NODE:
-            status, return_val = self.__call_func(statement)
+            result = self.__call_func(statement)
+            if isinstance(result, tuple) and result[0] == ExecStatus.RAISE:
+                status, return_val = result
         elif statement.elem_type == "=":
             self.__assign(statement)
         elif statement.elem_type == InterpreterBase.VAR_DEF_NODE:
@@ -97,13 +110,14 @@ class Interpreter(InterpreterBase):
         elif statement.elem_type == Interpreter.FOR_NODE:
             status, return_val = self.__do_for(statement)
         elif statement.elem_type == Interpreter.TRY_NODE:
-            print("doing a try node")
             status, return_val = self.__do_try(statement)
-            print("in the try block", status)
+            if status == ExecStatus.RAISE and Interpreter.TRY_STACK == 0:
+                super().error(
+                    ErrorType.FAULT_ERROR, f"Uncaught exception: {return_val.value()}"
+                )
         elif statement.elem_type == Interpreter.RAISE_NODE:
+            print("did raise")
             status, return_val = self.__do_raise(statement)
-            print("doing a raise node", return_val)
-        print("run statements", statement,status, return_val)
         return (status, return_val)
     
     def __call_func(self, call_node, env=None):
@@ -114,7 +128,6 @@ class Interpreter(InterpreterBase):
         return self.__call_func_aux(func_name, actual_args, env)
 
     def __call_func_aux(self, func_name, actual_args, env=None):
-        print("in func aux", func_name)
         if env is None:
             env = self.env
         if func_name == "print":
@@ -133,7 +146,10 @@ class Interpreter(InterpreterBase):
         # first evaluate all of the actual parameters and associate them with the formal parameter names
         args = {}
         for formal_ast, actual_ast in zip(formal_args, actual_args):
-            result = copy.copy(self.__eval_expr(actual_ast, env))
+            # lazy evaluate parameters
+            result = LazyObject(actual_ast, env.custom_copy(), self.__eval_expr)
+            if isinstance(result, tuple) and result[0] == ExecStatus.RAISE:
+                return result
             arg_name = formal_ast.get("name")
             args[arg_name] = result
         
@@ -144,24 +160,17 @@ class Interpreter(InterpreterBase):
           self.env.create(arg_name, value)
         status, return_val = self.__run_statements(func_ast.get("statements"))
         self.env.pop_func()
-
-        print("in func aux after running statements", func_name, status, return_val)
-
-        # must propage the raise up
         if status == ExecStatus.RAISE:
             return (status, return_val)
-
-
         return return_val
 
     def __call_print(self, args):
         output = ""
         for arg in args:
-            print("calling print", arg)
             result = self.__eval_expr(arg)  # result is a Value object
-            print("RESULTTT", result)
+            # if isinstance(result, LazyObject):
+            #     result = result.evaluate()
             if isinstance(result, tuple) and result[0] == ExecStatus.RAISE:
-                print("i am in print", result)
                 return result
             output = output + get_printable(result)
         super().output(output)
@@ -183,7 +192,6 @@ class Interpreter(InterpreterBase):
 
     def __assign(self, assign_ast):
         var_name = assign_ast.get("name")
-
         # Don't want to evaluate here (lazy eval)- create a lazy obj with captured env instead
         value_obj = LazyObject(assign_ast.get("expression"), self.env.custom_copy(), self.__eval_expr)
         if not self.env.set(var_name, value_obj):
@@ -199,6 +207,7 @@ class Interpreter(InterpreterBase):
             )
 
     def __eval_expr(self, expr_ast, env=None):
+        print(expr_ast)
         # DOCUMENT: Pass in captured environment if evaluating lazily, otherwise use self.env
         if env is None:
             env = self.env
@@ -212,47 +221,38 @@ class Interpreter(InterpreterBase):
             return Value(Type.BOOL, expr_ast.get("val"))
         if expr_ast.elem_type == InterpreterBase.VAR_NODE:
             var_name = expr_ast.get("name")
-            print(f"I am getting the value of {var_name}")
             val = env.get(var_name)
-            if isinstance(val, LazyObject):
+            while isinstance(val, LazyObject):
                 val = val.evaluate()
+            if isinstance(val, tuple) and val[0] == ExecStatus.RAISE:
+                return val
             if val is None:
                 super().error(ErrorType.NAME_ERROR, f"Variable {var_name} not found")
             return val
         if expr_ast.elem_type == InterpreterBase.FCALL_NODE:
             return self.__call_func(expr_ast, env)
         if expr_ast.elem_type in Interpreter.BIN_OPS:
-            return self.__eval_op(expr_ast, env)
+            try:
+                return self.__eval_op(expr_ast, env)
+            except ZeroDivisionError as e:
+                return (ExecStatus.RAISE, Value(Type.STRING, "div0"))
+                # mimic a raise but the error is "div0"
         if expr_ast.elem_type == Interpreter.NEG_NODE:
             return self.__eval_unary(expr_ast, Type.INT, lambda x: -1 * x, env)
         if expr_ast.elem_type == Interpreter.NOT_NODE:
             return self.__eval_unary(expr_ast, Type.BOOL, lambda x: not x, env)
 
     def __eval_op(self, arith_ast, env=None):
-        print("Now I go into eval op")
-        # how do i propagate this up everywhere????
         if env is None:
             env = self.env
         left_value_obj = self.__eval_expr(arith_ast.get("op1"), env)
-        print(left_value_obj)
+        if isinstance(left_value_obj, tuple) and left_value_obj[0] == ExecStatus.RAISE:
+            return left_value_obj
         if arith_ast.elem_type in ["&&", "||"]:
             return self.__short_circuit(arith_ast.elem_type, left_value_obj, arith_ast.get("op2"), env)
         right_value_obj = self.__eval_expr(arith_ast.get("op2"), env)
-
-        print("done evaluating both")
-        try:
-            status = left_value_obj[0]
-            if status == ExecStatus.RAISE:
-                return left_value_obj
-        except:
-            pass
-        try:
-            status = right_value_obj[0]
-            if status == ExecStatus.RAISE:
-                return right_value_obj
-        except:
-            pass
-
+        if isinstance(right_value_obj, tuple) and right_value_obj[0] == ExecStatus.RAISE:
+            return right_value_obj
         if not self.__compatible_types(
             arith_ast.elem_type, left_value_obj, right_value_obj
         ):
@@ -371,6 +371,10 @@ class Interpreter(InterpreterBase):
     def __do_if(self, if_ast):
         cond_ast = if_ast.get("condition")
         result = self.__eval_expr(cond_ast)
+        print(result)
+        if isinstance(result, tuple):
+            if result[0] == ExecStatus.RAISE:
+                return result
         if result.type() != Type.BOOL:
             super().error(
                 ErrorType.TYPE_ERROR,
@@ -413,12 +417,10 @@ class Interpreter(InterpreterBase):
     
 
     def __do_try(self, try_ast):
+        print("i am in try")
+        Interpreter.TRY_STACK += 1
         statements = try_ast.get("statements")
-        print("in the Try block")
-        # i need this to return back here
         status, return_val = self.__run_statements(statements)
-        print("Back in Try?")
-        print(status, return_val)
         if status == ExecStatus.RAISE:
             catchers = try_ast.get("catchers")
             catcher_found = False
@@ -428,27 +430,23 @@ class Interpreter(InterpreterBase):
                     catcher_found = True
                     statements = catcher.get("statements")
                     status, return_val = self.__run_statements(statements)
-                    break
             if not catcher_found:
-                super().error(
-                    ErrorType.FAULT_ERROR, "Uncaught exception"
-                )
-            print("raise status, must run catchers")
+                Interpreter.TRY_STACK -= 1
         return (status, return_val)
     
     def __do_return(self, return_ast):
         expr_ast = return_ast.get("expression")
         if expr_ast is None:
             return (ExecStatus.RETURN, Interpreter.NIL_VALUE)
-        value_obj = copy.copy(self.__eval_expr(expr_ast)) # why do i do this?
-        return (ExecStatus.RETURN, value_obj)
+        # lazy evaluate the return expression
+        return_val = LazyObject(expr_ast, self.env.custom_copy(), self.__eval_expr)
+        # value_obj = copy.copy(self.__eval_expr(expr_ast)) # why do i do this?
+        return (ExecStatus.RETURN, return_val)
     
     def __do_raise(self, raise_ast):
         expr_ast = raise_ast.get("exception_type")
         value_obj = self.__eval_expr(expr_ast)
-        print("In Raise")
         # need to eagerly evaluate the exception_type
-        print("Expr ast", value_obj.value())
         if value_obj.type() != Type.STRING:
             super().error(
                 ErrorType.TYPE_ERROR,

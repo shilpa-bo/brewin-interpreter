@@ -3,6 +3,7 @@
 class EnvironmentManager:
     def __init__(self):
         self.environment = []
+        self.try_stack = []
     
     def custom_copy(self):
         # DOCUMENT: Deep copy outer structure but keep references for inner scopes
@@ -62,3 +63,9 @@ class EnvironmentManager:
 
     def return_env(self):
         return self.environment
+    
+    def push_try_stack(self, try_ast):
+        self.try_stack.append(try_ast)
+
+    def pop_try_stack(self):
+        self.try_stack.pop()

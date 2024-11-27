@@ -1,0 +1,15 @@
+func main(){
+  var i;
+  try{
+    if (true){
+      raise "exep";
+    }
+    }
+    catch "exep"{
+    print("in catch");
+    }
+  }
+
+  /*OUT
+  in catch
+  */

@@ -4,20 +4,27 @@ from parser.brewparse import parse_program
 # Call the function on the AST
 
 program = """
-func main() {
-  try{
-    
-    raise "x";
-  }
-  catch "x"{
-    print("in catch x");
-  }
-  catch "i catch i catch i catch"{
-    print("in catch y");
-  }
-  var x;
+func bar() {
+ try {
+   print("B1");
+   raise "except1";
+ }
+ catch "except2" {
+   print("B3");
+ }
 }
 
+func main() {
+ try {
+   print("M1");
+   bar();
+   print("M2");
+ }
+ catch "except1" {
+   print("M3");
+ }
+ print("M5");
+}
 """
 ast = parse_program(program)
 print(ast)

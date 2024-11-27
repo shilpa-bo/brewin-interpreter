@@ -1,0 +1,910 @@
+Running Fails:
+
+Processing file: Legacy_V2_-_Control_Flow-Mixed_If-For.br
+3
+Expected Output:
+
+Actual Output:
+
+Test Legacy_V2_-_Control_Flow-Mixed_If-For.br passed.
+
+Processing file: Incorrectness_Autograder_Cases-text_exception_2.br
+Test Incorrectness_Autograder_Cases-text_exception_2.br failed with error: ErrorType.TYPE_ERROR: Incompatible type for raise exception type
+
+Processing file: Legacy_V2_-_Variables-Double_Declaration_Inside_If-Scope.br
+Test Legacy_V2_-_Variables-Double_Declaration_Inside_If-Scope.br failed with error: ErrorType.NAME_ERROR: Duplicate definition for variable a
+
+Processing file: Legacy_V2_-_Operators-Type_Compat_-_Cond_Int.br
+Expected Output:
+ErrorType.TYPE_ERROR
+Actual Output:
+true
+Test Legacy_V2_-_Operators-Type_Compat_-_Cond_Int.br failed.
+
+Processing file: Exceptions-Ill_formed_raise_statement_int.br
+Test Exceptions-Ill_formed_raise_statement_int.br failed with error: ErrorType.TYPE_ERROR: Incompatible type for raise exception type
+
+Processing file: Legacy_V2_-_Operators-Type_Compat_-_Arith_Bool.br
+Test Legacy_V2_-_Operators-Type_Compat_-_Arith_Bool.br failed with error: ErrorType.TYPE_ERROR: Incompatible operator - for type bool
+
+Processing file: Exceptions-Lazy_Uncaught_Division_by_Zero.br
+Expected Output:
+123
+omae wa...
+ErrorType.FAULT_ERROR
+Actual Output:
+123
+omae wa...
+Test Exceptions-Lazy_Uncaught_Division_by_Zero.br failed.
+
+Processing file: Legacy_V2_-_Functions-No_Declaration_in_Function.br
+Test Legacy_V2_-_Functions-No_Declaration_in_Function.br failed with error: ErrorType.NAME_ERROR: Undefined variable a in assignment
+
+Processing file: Legacy_V2_-_Operators-Type_Compat_-_Int_Bool.br
+Test Legacy_V2_-_Operators-Type_Compat_-_Int_Bool.br failed with error: ErrorType.TYPE_ERROR: Incompatible types for + operation
+
+Processing file: Exceptions-Uncaught_Division_by_Zero.br
+Expected Output:
+ErrorType.FAULT_ERROR
+Actual Output:
+
+Test Exceptions-Uncaught_Division_by_Zero.br failed.
+
+Processing file: Spec_Examples-Lazy_Error_Example.br
+Test Spec_Examples-Lazy_Error_Example.br failed with error: ErrorType.NAME_ERROR: Variable undefinedVar not found
+
+Processing file: Legacy_V2_-_Control_Flow-If-Statement_Condition_is_Boolean.br
+Test Legacy_V2_-_Control_Flow-If-Statement_Condition_is_Boolean.br failed with error: ErrorType.TYPE_ERROR: Incompatible type for if condition
+
+Processing file: Exceptions-Deeply_Nested_Division_by_Zero.br
+Expected Output:
+no error yet
+1
+2
+2
+-1161
+4
+-1
+11
+-1
+ErrorType.FAULT_ERROR
+Actual Output:
+no error yet
+1
+2
+2
+-1161
+4
+-1
+11
+-1
+Test Exceptions-Deeply_Nested_Division_by_Zero.br failed.
+
+Processing file: Exceptions-Ill_formed_raise_statement_nil.br
+Test Exceptions-Ill_formed_raise_statement_nil.br failed with error: ErrorType.TYPE_ERROR: Incompatible type for raise exception type
+
+Processing file: Legacy_V2_-_Functions-Double_Declaration_in_Function.br
+Test Legacy_V2_-_Functions-Double_Declaration_in_Function.br failed with error: ErrorType.NAME_ERROR: Duplicate definition for variable a
+
+Processing file: Exceptions-Lazy_Uncaught_Raised_Error.br
+Expected Output:
+lazy error
+omae wa...
+ErrorType.FAULT_ERROR
+Actual Output:
+lazy error
+omae wa...
+Test Exceptions-Lazy_Uncaught_Raised_Error.br failed.
+
+Processing file: Spec_Examples-Eager_error_example.br
+Test Spec_Examples-Eager_error_example.br failed with error: ErrorType.NAME_ERROR: Undefined variable x in assignment
+
+Processing file: Exceptions-Uncaught_Raised_Error.br
+Expected Output:
+ErrorType.FAULT_ERROR
+Actual Output:
+
+Test Exceptions-Uncaught_Raised_Error.br failed.
+
+Processing file: Incorrectness_Autograder_Cases-test_lazy_eval_error_4.br
+Test Incorrectness_Autograder_Cases-test_lazy_eval_error_4.br failed with error: ErrorType.TYPE_ERROR: Incompatible operator <= for type string
+
+Processing file: Legacy_V2_-_Control_Flow-If-Statement_Scope_Lifetime.br
+Test Legacy_V2_-_Control_Flow-If-Statement_Scope_Lifetime.br failed with error: ErrorType.NAME_ERROR: Undefined variable x in assignment
+
+Processing file: Lazy_Evaluation-Lazy_Undef_Func_Error.br
+Test Lazy_Evaluation-Lazy_Undef_Func_Error.br failed with error: ErrorType.NAME_ERROR: Variable x not found
+
+Processing file: Exceptions-Try_Catch_Shadowing.br
+Test Exceptions-Try_Catch_Shadowing.br failed with error: ErrorType.NAME_ERROR: Duplicate definition for variable a
+
+Processing file: Lazy_Evaluation-Lazy_Undef_Func_and_Vars_Error.br
+Test Lazy_Evaluation-Lazy_Undef_Func_and_Vars_Error.br failed with error: ErrorType.NAME_ERROR: Variable x not found
+
+Processing file: Legacy_V2_-_Control_Flow-For-Statement_Condition_is_Boolean.br
+Test Legacy_V2_-_Control_Flow-For-Statement_Condition_is_Boolean.br failed with error: ErrorType.TYPE_ERROR: Incompatible type for for condition
+
+Processing file: Spec_Examples-Lazy_Eval_Example.br
+Expected Output:
+first line
+f has been evaluated
+-14 greater than 5
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+ErrorType.FAULT_ERROR
+Actual Output:
+first line
+f has been evaluated
+-14 greater than 5
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+Test Spec_Examples-Lazy_Eval_Example.br failed.
+
+Processing file: Legacy_V2_-_Variables-Double_Declaration.br
+Test Legacy_V2_-_Variables-Double_Declaration.br failed with error: ErrorType.NAME_ERROR: Duplicate definition for variable a
+
+Processing file: Spec_Examples-Lazy_Raise_in_Function_Example.br
+Expected Output:
+Assigned result!
+ErrorType.FAULT_ERROR
+Actual Output:
+Assigned result!
+Test Spec_Examples-Lazy_Raise_in_Function_Example.br failed.
+
+Processing file: Legacy_V2_-_Variables-Declaration_and_Assignment.br
+Test Legacy_V2_-_Variables-Declaration_and_Assignment.br failed with error: ErrorType.NAME_ERROR: Duplicate definition for variable a
+
+Processing file: Exceptions-Simple_Try_Catch_Miss.br
+Expected Output:
+start
+enter try
+ErrorType.FAULT_ERROR
+Actual Output:
+start
+enter try
+Test Exceptions-Simple_Try_Catch_Miss.br failed.
+
+Processing file: Legacy_V2_-_Functions-Invalid_Parameter_Shadow.br
+Expected Output:
+entered function
+ErrorType.NAME_ERROR
+Actual Output:
+entered function
+Test Legacy_V2_-_Functions-Invalid_Parameter_Shadow.br failed.
+
+Processing file: Lazy_Evaluation-Lazy_Undef_Var_Error.br
+Test Lazy_Evaluation-Lazy_Undef_Var_Error.br failed with error: ErrorType.NAME_ERROR: Variable x not found
+
+Processing file: Exceptions-Deeply_Nested_Lazy_Error.br
+Test Exceptions-Deeply_Nested_Lazy_Error.br failed with error: 'tuple' object has no attribute 'type'
+
+Processing file: Legacy_V2_-_Variables-Double_Declaration_Inside_For-Scope.br
+Test Legacy_V2_-_Variables-Double_Declaration_Inside_For-Scope.br failed with error: ErrorType.NAME_ERROR: Duplicate definition for variable a
+
+Processing file: Exceptions-Ill_formed_raise_statement_bool.br
+Test Exceptions-Ill_formed_raise_statement_bool.br failed with error: ErrorType.TYPE_ERROR: Incompatible type for raise exception type
+
+Processing file: Legacy_V2_-_Operators-Type_Compat_-_Unary_Bool.br
+Test Legacy_V2_-_Operators-Type_Compat_-_Unary_Bool.br failed with error: ErrorType.TYPE_ERROR: Incompatible type for neg operation
+
+************************************************************************************************************
+
+Running Tests:
+
+Processing file: Correctness_Autograder_Cases-test_exception_argument_1.br
+Expected Output:
+X
+Y
+Actual Output:
+X
+Y
+Test Correctness_Autograder_Cases-test_exception_argument_1.br passed.
+
+Processing file: Eager-Like_Behavior-nil_comparison.br
+Expected Output:
+true
+false
+false
+true
+false
+false
+true
+false
+false
+false
+false
+false
+false
+true
+Actual Output:
+true
+false
+false
+true
+false
+false
+true
+false
+false
+false
+false
+false
+false
+true
+Test Eager-Like_Behavior-nil_comparison.br passed.
+
+Processing file: Legacy_V2_-_Operators-Boolean_Correctness.br
+3
+Expected Output:
+
+Actual Output:
+true
+false
+false
+false
+true
+X = False
+...
+Test Legacy_V2_-_Operators-Boolean_Correctness.br failed.
+
+Processing file: Legacy_V2_-_Functions-Simple_Recursion_-_factorial.br
+3
+Expected Output:
+
+Actual Output:
+120
+Enter a number
+6
+Test Legacy_V2_-_Functions-Simple_Recursion_-_factorial.br failed.
+
+Processing file: Spec_Examples-Div0_Demo.br
+Expected Output:
+Caught division by zero!
+Actual Output:
+Caught division by zero!
+Test Spec_Examples-Div0_Demo.br passed.
+
+Processing file: Lazy_Evaluation-Test_cached_eval.br
+Expected Output:
+a: 5
+x: 6
+x: 6
+a: -1
+x: 0
+x: 0
+Actual Output:
+a: 5
+x: 6
+x: 6
+a: -1
+x: 0
+x: 0
+Test Lazy_Evaluation-Test_cached_eval.br passed.
+
+Processing file: Exceptions-Simple_Try_Catch_Hit.br
+Expected Output:
+start
+enter try
+caught
+continue
+Actual Output:
+start
+enter try
+caught
+continue
+Test Exceptions-Simple_Try_Catch_Hit.br passed.
+
+Processing file: Lazy_Evaluation-Deeply_Nested_Lazy_Evaluation_and_Cache.br
+Expected Output:
+foo -> -:2
+bar -> x:4
+foo -> b:3
+bar -> x:6
+foo -> b:5
+bar -> x:10
+foo -> b:9
+-ybyby&xaxaxa
+bar -> -:3
+foo -> b:2
+bar -> x:4
+foo -> b:3
+bar -> x:6
+foo -> b:5
+bar -> x:10
+foo -> b:9
+ybybyby&xaxaxa-
+-ybyby&xaxaxa
+ybybyby&xaxaxa-
+Actual Output:
+foo -> -:2
+bar -> x:4
+foo -> b:3
+bar -> x:6
+foo -> b:5
+bar -> x:10
+foo -> b:9
+-ybyby&xaxaxa
+bar -> -:3
+foo -> b:2
+bar -> x:4
+foo -> b:3
+bar -> x:6
+foo -> b:5
+bar -> x:10
+foo -> b:9
+ybybyby&xaxaxa-
+-ybyby&xaxaxa
+ybybyby&xaxaxa-
+Test Lazy_Evaluation-Deeply_Nested_Lazy_Evaluation_and_Cache.br passed.
+
+Processing file: Lazy_Evaluation-Override_Lazy_Input.br
+Expected Output:
+
+Actual Output:
+asdf
+21
+Test Lazy_Evaluation-Override_Lazy_Input.br failed.
+
+Processing file: Lazy_Evaluation-Phantom_Print.br
+Expected Output:
+
+Actual Output:
+
+Test Lazy_Evaluation-Phantom_Print.br passed.
+
+Processing file: Correctness_Autograder_Cases-test_exception_condtion_1.br
+Test Correctness_Autograder_Cases-test_exception_condtion_1.br failed with error: 'tuple' object has no attribute 'type'
+
+Processing file: Lazy_Evaluation-Phantom_Input.br
+Expected Output:
+
+Actual Output:
+
+Test Lazy_Evaluation-Phantom_Input.br passed.
+
+Processing file: Correctness_Autograder_Cases-test_lazy_eval_mutation_1.br
+Expected Output:
+20
+31
+Actual Output:
+20
+31
+Test Correctness_Autograder_Cases-test_lazy_eval_mutation_1.br passed.
+
+Processing file: Spec_Examples-Except_Handling_Simple_Prog.br
+Expected Output:
+M1
+B1
+F1
+M3
+M5
+Actual Output:
+M1
+B1
+F1
+M3
+M5
+Test Spec_Examples-Except_Handling_Simple_Prog.br passed.
+
+Processing file: Exceptions-Try_Catch_Shadowing_Validity.br
+Expected Output:
+45
+a has been shadowed and modified
+abc
+12
+12
+Actual Output:
+45
+a has been shadowed and modified
+abc
+12
+12
+Test Exceptions-Try_Catch_Shadowing_Validity.br passed.
+
+Processing file: Spec_Examples-Lazy_Error_Handling_example.br
+Expected Output:
+Before x is evaluated
+Caught an error during evaluation of x
+Actual Output:
+Before x is evaluated
+Caught an error during evaluation of x
+Test Spec_Examples-Lazy_Error_Handling_example.br passed.
+
+Processing file: Legacy_V2_-_Functions-Simple_Call.br
+Expected Output:
+42
+Actual Output:
+42
+Test Legacy_V2_-_Functions-Simple_Call.br passed.
+
+Processing file: Legacy_V2_-_Input_and_Output-Input_Return_Type.br
+3
+3
+3
+Expected Output:
+
+Actual Output:
+false
+false
+true
+true
+-3123
+true
+false
+true
+Test Legacy_V2_-_Input_and_Output-Input_Return_Type.br failed.
+
+Processing file: Spec_Examples-Shortcircuit_Eval_Example.br
+Expected Output:
+t
+f
+false
+---
+f
+false
+Actual Output:
+t
+f
+false
+---
+f
+false
+Test Spec_Examples-Shortcircuit_Eval_Example.br passed.
+
+Processing file: Lazy_Evaluation-Eager_for-stmt_header.br
+Expected Output:
+x: 0
+a: 0
+x: 1
+a: 1
+x: 2
+a: 2
+end
+Actual Output:
+x: 0
+a: 0
+x: 1
+a: 1
+x: 2
+a: 2
+end
+Test Lazy_Evaluation-Eager_for-stmt_header.br passed.
+
+Processing file: Lazy_Evaluation-Lazy_eval_outside_scope.br
+Expected Output:
+a: 5
+6
+Actual Output:
+a: 5
+6
+Test Lazy_Evaluation-Lazy_eval_outside_scope.br passed.
+
+Processing file: Legacy_V2_-_Control_Flow-If-Statement_Shadowing.br
+Expected Output:
+5
+foo
+foo
+bar
+foo
+5
+Actual Output:
+5
+foo
+foo
+bar
+foo
+5
+Test Legacy_V2_-_Control_Flow-If-Statement_Shadowing.br passed.
+
+Processing file: Spec_Examples-Try_Catch_Example.br
+Expected Output:
+z
+a
+Actual Output:
+z
+a
+Test Spec_Examples-Try_Catch_Example.br passed.
+
+Processing file: Lazy_Evaluation-Function_Order_of_Eval.br
+Expected Output:
+first
+second
+third
+7
+Actual Output:
+first
+second
+third
+7
+Test Lazy_Evaluation-Function_Order_of_Eval.br passed.
+
+Processing file: Spec_Examples-Lazy_Eval_Demo.br
+3
+Test Spec_Examples-Lazy_Eval_Demo.br failed with error: ErrorType.NAME_ERROR: Variable n not found
+
+Processing file: Legacy_V2_-_Input_and_Output-Print_Returns_nil.br
+Expected Output:
+true
+Actual Output:
+true
+Test Legacy_V2_-_Input_and_Output-Print_Returns_nil.br passed.
+
+Processing file: Lazy_Evaluation-Lazy_self-ref_print_arg.br
+Test Lazy_Evaluation-Lazy_self-ref_print_arg.br failed with error: ErrorType.NAME_ERROR: Variable x not found
+
+Processing file: Eager-Like_Behavior-For-header_local_scope_access.br
+Expected Output:
+asd
+Actual Output:
+asd
+Test Eager-Like_Behavior-For-header_local_scope_access.br passed.
+
+Processing file: Legacy_V2_-_Operators-Arithmetic_Correctness.br
+Expected Output:
+49
+Actual Output:
+49
+Test Legacy_V2_-_Operators-Arithmetic_Correctness.br passed.
+
+Processing file: Legacy_V2_-_Functions-Early_Return.br
+Expected Output:
+before return
+func call
+nested if
+Actual Output:
+before return
+func call
+nested if
+Test Legacy_V2_-_Functions-Early_Return.br passed.
+
+Processing file: Spec_Examples-Short_Circuiting_Example.br
+Expected Output:
+foo
+true
+done
+Actual Output:
+foo
+true
+done
+Test Spec_Examples-Short_Circuiting_Example.br passed.
+
+Processing file: Lazy_Evaluation-Lazy_self-ref_input_arg.br
+Test Lazy_Evaluation-Lazy_self-ref_input_arg.br failed with error: ErrorType.NAME_ERROR: Variable x not found
+
+Processing file: Legacy_V2_-_Control_Flow-For-Statement_Shadowing.br
+Expected Output:
+37
+38
+39
+40
+41
+The answer to the universe
+43
+44
+45
+46
+47
+42 outer A
+Actual Output:
+37
+38
+39
+40
+41
+The answer to the universe
+43
+44
+45
+46
+47
+42 outer A
+Test Legacy_V2_-_Control_Flow-For-Statement_Shadowing.br passed.
+
+Processing file: Legacy_V2_-_Functions-Call_Chain.br
+Expected Output:
+chain4: 0
+chain3: 01
+chain3: 01
+chain2: 01220122
+chain1: 012201223
+012201223
+Actual Output:
+chain4: 0
+chain3: 01
+chain3: 01
+chain2: 01220122
+chain1: 012201223
+012201223
+Test Legacy_V2_-_Functions-Call_Chain.br passed.
+
+Processing file: Legacy_V2_-_Functions-Pass_By_Value.br
+Expected Output:
+42
+31415
+Actual Output:
+42
+31415
+Test Legacy_V2_-_Functions-Pass_By_Value.br passed.
+
+Processing file: Lazy_Evaluation-Eager_input_func_call.br
+3
+Expected Output:
+
+Actual Output:
+foo
+bar
+5
+Test Lazy_Evaluation-Eager_input_func_call.br failed.
+
+Processing file: Correctness_Autograder_Cases-test_bool_shortcircuit_1.br
+Expected Output:
+t
+true
+---
+f
+t
+true
+Actual Output:
+t
+true
+---
+f
+t
+true
+Test Correctness_Autograder_Cases-test_bool_shortcircuit_1.br passed.
+
+Processing file: Legacy_V2_-_Input_and_Output-Simple_User_Input.br
+3
+3
+3
+Expected Output:
+
+Actual Output:
+3
+3
+3
+Test Legacy_V2_-_Input_and_Output-Simple_User_Input.br failed.
+
+Processing file: Exceptions-Try_Catch_Scope_Unwinding.br
+Expected Output:
+0
+00
+000
+45
+false
+45
+Actual Output:
+0
+00
+000
+45
+false
+45
+Test Exceptions-Try_Catch_Scope_Unwinding.br passed.
+
+Processing file: Correctness_Autograder_Cases-test_lazy_eval_cache_1.br
+Expected Output:
+---
+bar: 0
+bar: 1
+bar: 2
+bar: 3
+6
+---
+6
+Actual Output:
+---
+bar: 0
+bar: 1
+bar: 2
+bar: 3
+6
+---
+6
+Test Correctness_Autograder_Cases-test_lazy_eval_cache_1.br passed.
+
+Processing file: Lazy_Evaluation-Lazy_input_func_call.br
+3
+Expected Output:
+
+Actual Output:
+bar
+foo
+3
+Test Lazy_Evaluation-Lazy_input_func_call.br failed.
+
+Processing file: Legacy_V2_-_Control_Flow-Simple_For_Loop.br
+Expected Output:
+8
+5
+2
+Actual Output:
+8
+5
+2
+Test Legacy_V2_-_Control_Flow-Simple_For_Loop.br passed.
+
+Processing file: Lazy_Evaluation-Lazy_self-ref_fcall_arg.br
+Expected Output:
+a: 42
+28
+Actual Output:
+a: 42
+28
+Test Lazy_Evaluation-Lazy_self-ref_fcall_arg.br passed.
+
+Processing file: Correctness_Autograder_Cases-test_exception_basic_2.br
+Expected Output:
+0
+1
+3
+4
+Actual Output:
+0
+1
+3
+4
+Test Correctness_Autograder_Cases-test_exception_basic_2.br passed.
+
+Processing file: Correctness_Autograder_Cases-test_lazy_eval_basic_1.br
+Expected Output:
+---
+bar: 1
+-1
+Actual Output:
+---
+bar: 1
+-1
+Test Correctness_Autograder_Cases-test_lazy_eval_basic_1.br passed.
+
+Processing file: Legacy_V2_-_Functions-Mutual_Recursion.br
+3
+Expected Output:
+
+Actual Output:
+209
+Enter a number
+56
+Test Legacy_V2_-_Functions-Mutual_Recursion.br failed.
+
+Processing file: Eager-Like_Behavior-Sequential_Prints.br
+Expected Output:
+asd
+5
+false
+Actual Output:
+asd
+5
+false
+Test Eager-Like_Behavior-Sequential_Prints.br passed.
+
+Processing file: Lazy_Evaluation-Lazy_as_non-eval_param.br
+Expected Output:
+nothing
+still nothing
+still nothing
+true
+first
+second
+third
+false
+Actual Output:
+nothing
+still nothing
+still nothing
+true
+first
+second
+third
+false
+Test Lazy_Evaluation-Lazy_as_non-eval_param.br passed.
+
+Processing file: Legacy_V2_-_Operators-Mixed_Comparison.br
+Expected Output:
+false
+false
+true
+true
+true
+true
+false
+false
+true
+Actual Output:
+false
+false
+true
+true
+true
+true
+false
+false
+true
+Test Legacy_V2_-_Operators-Mixed_Comparison.br passed.
+
+Processing file: Correctness_Autograder_Cases-test_lazy_eval_update_1.br
+Expected Output:
+zero
+x
+zero
+inc:0
+x
+zero
+inc:1
+x
+zero
+inc:2
+d
+Actual Output:
+zero
+x
+zero
+inc:0
+x
+zero
+inc:1
+x
+zero
+inc:2
+d
+Test Correctness_Autograder_Cases-test_lazy_eval_update_1.br passed.
+
+Processing file: Correctness_Autograder_Cases-test_exception_func_call_1.br
+Expected Output:
+0
+1
+F0
+3
+4
+Actual Output:
+0
+1
+F0
+3
+4
+Test Correctness_Autograder_Cases-test_exception_func_call_1.br passed.
+
+Processing file: Spec_Examples-Need_Semantics_Simple_Prog.br
+Expected Output:
+done with call!
+f is running
+16
+about to print result again
+16
+Actual Output:
+done with call!
+f is running
+16
+about to print result again
+16
+Test Spec_Examples-Need_Semantics_Simple_Prog.br passed.
+
+Processing file: Correctness_Autograder_Cases-test_lazy_eval_func_call_1.br
+Expected Output:
+foo
+---
+---
+foo
+4
+Actual Output:
+foo
+---
+---
+foo
+4
