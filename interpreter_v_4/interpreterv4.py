@@ -1,9 +1,9 @@
 # document that we won't have a return inside the init/update of a for loop
 from enum import Enum
 from parser.brewparse import parse_program
-from env_v4 import EnvironmentManager
+from interpreter_v_4.env_v4 import EnvironmentManager
 from intbase import InterpreterBase, ErrorType
-from type_v4 import Type, Value, create_value, get_printable
+from interpreter_v_4.type_v4 import Type, Value, create_value, get_printable
 
 
 class ExecStatus(Enum):
