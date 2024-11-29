@@ -1,0 +1,12 @@
+func main() {
+  x = foo();
+  print("OK");
+  print(x);
+}
+
+/*
+*OUT*
+ErrorType.NAME_ERROR
+*OUT*
+*/
+

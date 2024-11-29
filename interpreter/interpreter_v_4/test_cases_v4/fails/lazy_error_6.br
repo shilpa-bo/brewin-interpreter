@@ -1,0 +1,20 @@
+func foo(x){
+  print("this will fail ok");
+  return y;
+}
+func g(x){
+  print("yea yea");
+  return x;
+}
+func main() {
+var x;
+x = foo(9) + g(9);
+print(x);
+}
+
+/*
+*OUT*
+this will fail ok
+ErrorType.NAME_ERROR
+*OUT*
+*/

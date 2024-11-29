@@ -1,0 +1,44 @@
+func bye(){
+  x = 9;
+}
+func hello(){
+  print("in hello");
+  return "hello";
+}
+func main(){
+var y;
+var x;
+y = hello();
+x = bye();
+try{
+  print("try1");
+  raise y;
+}
+catch "hello"{
+print("in catch");
+}
+try{
+  y = "bye";
+  raise y;
+}
+catch "hello"{
+    print("catch2");
+}
+catch "bye"{
+  print("catch3");
+  bye();
+  raise h;
+}
+print("ok done");
+
+}
+
+/*
+*OUT*
+try1
+in hello
+in catch
+catch3
+ErrorType.NAME_ERROR
+*OUT*
+*/

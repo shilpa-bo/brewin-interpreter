@@ -1,0 +1,13 @@
+func main(){
+var y;
+y = 10;
+y = 2;
+print(y);
+}
+
+
+/*
+*OUT*
+2
+*OUT*
+*/

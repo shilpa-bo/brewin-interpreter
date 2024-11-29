@@ -1,0 +1,23 @@
+func g(x){
+  print("in g(x)");
+  return 8;
+}
+func h(x){
+  print("in h(x)");
+  return 7;
+}
+func f(x, y){
+  print("running f");
+  var z;
+  z = y + 4;
+  return x;
+}
+func main(){
+  f(g(3), h(1));
+}
+
+/*
+*OUT*
+running f
+*OUT*
+*/

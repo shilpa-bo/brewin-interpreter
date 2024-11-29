@@ -1,0 +1,19 @@
+func main(){
+  var i;
+  try{
+    for (i = 0; i < 2; i = i+1){
+      print(i);
+      raise "exep";
+    }
+    }
+    catch "exep"{
+    print("in catch");
+    }
+  }
+
+/*
+*OUT*
+0
+in catch
+*OUT*
+*/

@@ -1,0 +1,23 @@
+func f(){
+  print("in f");
+  return 3;
+}
+func g(x){
+  print("in g");
+  return 9;
+}
+
+func main(){
+  var x;
+  var y;
+  y = f();
+  x = g(y);
+  print(x);
+}
+
+/*
+*OUT*
+in g
+9
+*OUT*
+*/

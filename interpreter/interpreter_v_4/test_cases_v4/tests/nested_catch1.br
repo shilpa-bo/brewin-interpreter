@@ -1,0 +1,29 @@
+func main(){
+  print("hi");
+  try{
+    print("try 1");
+    try{
+      raise "x";
+    }
+    catch "x"{
+      print("nested catch");
+    }
+    raise "x";
+  }
+  catch "x"{
+    print("catch x");
+  }
+  catch "y"{
+    print("catch y");
+  }
+  print("resume");
+}
+/*
+*OUT*
+hi
+try 1
+nested catch
+catch x
+resume
+*OUT*
+*/

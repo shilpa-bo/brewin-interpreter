@@ -1,0 +1,20 @@
+func g(){
+  print("in g");
+  raise "x";
+  return 0;
+}
+func main(){
+  try{
+    print(9, g());
+  }
+  catch "x" {
+    print("x");
+  }
+}
+
+/*
+*OUT*
+in g
+x
+*OUT*
+*/

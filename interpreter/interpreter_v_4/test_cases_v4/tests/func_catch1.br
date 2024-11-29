@@ -1,0 +1,33 @@
+func f(some_str){
+  try{
+    print("in f try");
+    raise "x";
+  }
+  catch "x"{
+    print("caught ", some_str);
+    raise "why not";
+  }
+}
+
+func main(){
+var y;
+var z;
+y = "why not";
+z=y;
+try{
+  f("hello");
+}
+catch "why not"{
+  print(y);
+  print("caught 2");
+}
+}
+
+/*
+*OUT*
+in f try
+caught hello
+why not
+caught 2
+*OUT*
+*/

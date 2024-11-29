@@ -1,0 +1,16 @@
+func f(x){
+    return x;
+}
+func main(){
+    var x;
+    x = 1;
+    if (f(x) == 1){
+        print("hi");
+    }
+}
+
+/*
+*OUT*
+hi
+*OUT*
+*/

@@ -1,9 +1,0 @@
-func main(){
-var n;
-n = inputi("enter a number") + "string";
-print(n);
-}
-/*OUT
-enter a number
-ErrorType.TYPE_ERROR
-*/

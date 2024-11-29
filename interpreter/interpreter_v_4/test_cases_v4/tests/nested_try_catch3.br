@@ -1,0 +1,23 @@
+func foo(){
+raise "foo";
+}
+func main() {
+  try{
+    if (foo()){
+      print("in if statement");
+      raise "error";
+    }
+  }
+  catch "foo"{
+    print("in catch statement");
+  }
+  print("hello");
+  raise "error";
+}
+/*
+*OUT*
+in catch statement
+hello
+ErrorType.FAULT_ERROR
+*OUT*
+*/

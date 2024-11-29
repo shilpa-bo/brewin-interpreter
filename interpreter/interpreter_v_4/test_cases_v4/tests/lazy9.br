@@ -1,0 +1,40 @@
+func g(x){
+  print("in g(x) ", x);
+  return 8;
+}
+func h(x){
+  print("in h(x)");
+  return 7;
+}
+func f(x, y){
+  print("running f");
+  var z;
+  z = y + 4;
+  print(y);
+  return x;
+}
+func main(){
+  var x;
+  var y;
+  var z;
+  y = g(3);
+  x = h(1);
+  z = f(y, x);
+  print("before eval");
+  print(x);
+  print(z);
+  print(y);
+}
+
+/*
+*OUT*
+before eval
+in h(x)
+7
+running f
+7
+in g(x) 3
+8
+8
+*OUT*
+*/

@@ -1,0 +1,18 @@
+func f(x){
+    print("i will still print");
+    return 2*x;
+}
+func main(){
+    var x;
+    var y;
+    y = 2;
+    x = f("hi");
+    print(x);
+}
+
+/*
+*OUT*
+i will still print
+ErrorType.TYPE ERROR
+*OUT*
+*/

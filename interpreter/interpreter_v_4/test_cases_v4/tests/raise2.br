@@ -1,0 +1,20 @@
+func main(){
+  try{
+    var x;
+    print("in try");
+    x = inputs("Enter foobar");
+    print("before x is eval");
+    raise "foo" + "bar";
+  }
+  catch "foobar"{
+    print("catch1");
+  }
+}
+
+/*
+*OUT*
+in try
+before x is eval
+catch1
+*OUT*
+*/

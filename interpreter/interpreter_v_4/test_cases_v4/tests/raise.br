@@ -1,0 +1,18 @@
+func main(){
+  try{
+    var x;
+    print("in try");
+    x = "foo" + "bar";
+    raise x;
+  }
+  catch "foobar"{
+    print("catch1");
+  }
+}
+
+/*
+*OUT*
+in try
+catch1
+*OUT*
+*/

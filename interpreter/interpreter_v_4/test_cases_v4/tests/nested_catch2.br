@@ -1,0 +1,29 @@
+func f(){
+  try{
+    g();
+    }
+  catch "g" {
+    print("f catches g");
+    raise "g";
+  }
+}
+func g(){
+  raise "g";
+}
+func main(){
+  try{
+    f();
+  }
+  catch "g"{
+    print("g");
+  }
+  print("done");
+}
+
+/*
+*OUT*
+f catches g
+g
+done
+*OUT*
+*/
