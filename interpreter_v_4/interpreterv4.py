@@ -437,7 +437,7 @@ class Interpreter(InterpreterBase):
                 catch_statements = catcher.get("statements")
                 return self.__run_statements(catch_statements)
             
-        # no catchers matched, propogate the exception
+        # no catchers matched, propagate the exception
         return (status, exception_value)
     def __do_return(self, return_ast):
         expr_ast = return_ast.get("expression")
@@ -445,7 +445,6 @@ class Interpreter(InterpreterBase):
             return (ExecStatus.RETURN, Interpreter.NIL_VALUE)
         # lazy evaluate the return expression
         return_val = LazyObject(expr_ast, self.env.custom_copy(), self.__eval_expr)
-        # value_obj = copy.copy(self.__eval_expr(expr_ast)) # why do i do this?
         return (ExecStatus.RETURN, return_val)
     
     def __do_raise(self, raise_ast):
