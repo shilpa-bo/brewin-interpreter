@@ -2,9 +2,9 @@ import copy
 from enum import Enum
 
 from parser.brewparse import parse_program
-from env_v3 import EnvironmentManager
+from interpreter_v_3.env_v3 import EnvironmentManager
 from intbase import InterpreterBase, ErrorType
-from type_v3 import *
+from interpreter_v_3.type_v3 import *
 
 
 class ExecStatus(Enum):
@@ -390,23 +390,6 @@ class Interpreter(InterpreterBase):
             ErrorType.TYPE_ERROR,
             f"Can't compare unrelated types {type1} and {type2}"
         )
-
-    def __compatible_types(self, oper, obj1, obj2):
-        # DOCUMENT: allow comparisons ==/!= of anything against anything
-        type1 = obj1.type()
-        type2 = obj2.type()
-        if type1 == Type.VOID or type2 == Type.VOID:
-          return False
-        if oper in ["==", "!="]:
-            if (self.type_manager.is_struct_type(type1) and type2 == Type.NIL) or \
-               (self.type_manager.is_struct_type(type2) and type1 == Type.NIL):
-                return True
-        if oper in ["||","&&"]:
-            if (type1 == Type.INT and type2 == Type.BOOL) or \
-               (type1 == Type.BOOL and type2 == Type.INT):
-                return True
-
-        return obj1.type() == obj2.type()
     
     def __compatible_types_for_assignment(self, lhs_variable, rhs_value):
         lhs_type = lhs_variable.type()
