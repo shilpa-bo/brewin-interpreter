@@ -1,4 +1,4 @@
-Brewin Interpreter
+### Brewin Interpreter
 
 Interpreter for a C++ like language called **Brewin**. There are 4 versions, each building off the other, adding new features.
 
