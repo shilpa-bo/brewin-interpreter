@@ -91,7 +91,7 @@ This is Version 3
 **/
 ```
 
-### Brewin Version 4
+#### Brewin Version 4
 *Note: This is built off of V2 not V3*
 
 Notable Features:
