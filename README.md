@@ -6,6 +6,7 @@ Each Version has 3 parts:
 - Interpreter file- implementing the actual interpreter logic
 - Envionment manager- manages different function scopes and the environment
 - Type manager- handles different types, all values have a type and a value
+
 Each Version (except for v1) also has all the test cases used to test the interpreter
 
 Here are examples of what each version can do with the specified output:
