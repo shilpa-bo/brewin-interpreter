@@ -78,10 +78,10 @@ func foo(d: dog) : dog {
  func main() : void {
   print("This is Version 3");
   var koda: dog;
-  var kippy: dog;
+  var ashy: dog;
   koda = new dog;
-  kippy = foo(koda);
-  kippy.bite = 20;
+  ashy = foo(koda);
+  ashy.bite = 20;
   print(koda.bark, " ", koda.bite);
 }
 /**
