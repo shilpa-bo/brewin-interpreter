@@ -1,6 +1,6 @@
-### Brewin Interpreter
+## Brewin Interpreter
 
-Interpreter for a C++ like language called **Brewin**. There are 4 versions, each building off the other, adding new features.
+This is an interpreter for a C++ like language called **Brewin**. There are 4 versions, each building off the other, adding new features.
 
 Each Version has 3 parts:
 - Interpreter file- implementing the actual interpreter logic
