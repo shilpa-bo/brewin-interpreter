@@ -1,6 +1,6 @@
 ## Brewin Interpreter
 
-This project is an interpreter for a C++-like language called Brewin, built in Python. It includes a simple web-based interface (using Flask) that allows users to write and execute Brewin code directly in the browser.
+This project is an interpreter for a C++-like language called Brewin, built in Python. It includes a simple web-based interface (using Flask) that allows users to write and execute Brewin code directly in the browser. In the web interface, you can choose what version you want to use.
 
 There are 4 versions, each building off the other, adding new features.
 
@@ -11,7 +11,7 @@ Each Version has 3 parts:
 
 Each Version (except for v1) also has all the test cases used to test the interpreter
 
-To run interpreter:
+To run the interpreter:
 ```
 git clone https://github.com/shilpa-bo/brewin-interpreter.git
 cd brewin-interpreter (navigate to project directory)
@@ -135,3 +135,8 @@ In func foo
 Caught div0!
 **/
 ```
+
+### Web Interface Example
+<img width="1236" alt="image" src="https://github.com/user-attachments/assets/0af84bb6-5f12-4e70-b31e-29f664f9870c" />
+<img width="1238" alt="image" src="https://github.com/user-attachments/assets/03518d74-057a-4fe0-9c73-68f19d92ec72" />
+
