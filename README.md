@@ -1,4 +1,4 @@
-### Brewin Interpreter
+## Brewin Interpreter
 
 This project is an interpreter for a C++-like language called Brewin, built in Python. It includes a simple web-based interface (using Flask) that allows users to write and execute Brewin code directly in the browser.
 
