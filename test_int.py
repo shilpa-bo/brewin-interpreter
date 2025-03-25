@@ -6,7 +6,6 @@ struct person{
     name : string;
 }
 func main() : void{
-    print("Hello World");
     var p : person;
     print(p);
     p = new person;

@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title style="font-family: monaco;">Brewin Interpreter</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/monokai.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/python/python.min.js"></script>
+    <style>
+        body {
+            font-family: 'monaco';
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        h3 {
+            font-family: monaco;
+        }
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            min-height: 450px;
+        }
+        .editor-container, .output-container {
+            padding: 10px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        .editor-container {
+            border-right: 1px solid #eee;
+            /* padding-bottom: ; */
+        }
+        .CodeMirror {
+            flex: 1;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .output-container {
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            height: 500px;
+        }
+        #output {
+            margin: 0;
+            padding: 15px;
+            white-space: pre-wrap;
+            font-family: 'Consolas', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            color: #333;
+            flex: 1;
+            overflow-y: auto;
+        }
+        .button-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+        button {
+            background-color: #327187;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+            font-family: monaco;
+        }
+        button:hover {
+            background-color: #85a4b9;
+        }
+        .error {
+            color: #e74c3c;
+            padding: 10px;
+            border-radius: 4px;
+            background-color: #fde8e8;
+            margin-top: 10px;
+        }
+        .CodeMirror-placeholder {
+            color: #999;
+        }
+        .version-selector {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .version-selector select {
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            font-size: 14px;
+            margin-left: 10px;
+        }
+        .version-selector label {
+            font-weight: bold;
+            color: #2c3e50;
+            font-family: monaco;
+        }
+    </style>
+</head>
+<body>
+    <h1>Brewin Interpreter</h1>
+    <div class="version-selector">
+        <label for="interpreterVersion">Interpreter Version:</label>
+        <select id="interpreterVersion">
+            <option value="1">Version 1</option>
+            <option value="2" selected>Version 2</option>
+            <option value="3">Version 3</option>
+            <option value="4">Version 4</option>
+        </select>
+        <div class="button-container">
+            <button onclick="runCode()">Run Code</button>
+        </div>
+    </div>
+    <div class="container">
+        <div class="editor-container">
+            <textarea id="codeInput"></textarea>
+        </div>
+        <div class="output-container">
+            <h3>Output:</h3>
+            <pre id="output"></pre>
+        </div>
+    </div>
+
+    <script>
+        // Initialize CodeMirror
+        var editor = CodeMirror.fromTextArea(document.getElementById("codeInput"), {
+            mode: "python",
+            theme: "monokai",
+            lineNumbers: true,
+            autoCloseBrackets: true,
+            matchBrackets: true,
+            indentUnit: 4,
+            tabSize: 4,
+            lineWrapping: true,
+            placeholder: "Type your Brewin code here..."
+        });
+
+        async function runCode() {
+            const code = editor.getValue();
+            const version = document.getElementById("interpreterVersion").value;
+            const outputElement = document.getElementById("output");
+            
+            try {
+                const response = await fetch("/run", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ 
+                        code,
+                        version 
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.error) {
+                    outputElement.innerHTML = `<div class="error">${result.error}</div>`;
+                } else {
+                    outputElement.textContent = result.output || "No output";
+                    outputElement.scrollTop = outputElement.scrollHeight;
+                }
+            } catch (error) {
+                outputElement.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+        }
+
+        // Set initial editor size
+        editor.setSize("100%", "400px");
+    </script>
+</body>
+</html>

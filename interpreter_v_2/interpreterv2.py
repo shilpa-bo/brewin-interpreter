@@ -4,9 +4,9 @@ import copy
 from enum import Enum
 
 from parser.brewparse import parse_program
-from env_v2 import EnvironmentManager
+from interpreter_v_2.env_v2 import EnvironmentManager
 from intbase import InterpreterBase, ErrorType
-from type_v2 import Type, Value, create_value, get_printable
+from interpreter_v_2.type_v2 import Type, Value, create_value, get_printable
 
 
 class ExecStatus(Enum):
